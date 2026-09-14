@@ -1,7 +1,5 @@
 # KLBQ · 安卓绘制内核 C/C++ 入门路线拆解 新手学习教程
 
-> [!IMPORTANT]
-> **教育用途声明**：本仓库是一套**零基础 C/C++ 与安卓原生开发的学习教程**。仓库里的内存读取、图形覆盖层等代码，**仅限在你的自有设备、或你拥有合法授权的设备上作技术研究之用**。请勿用于任何侵犯他人权益、违反软件/游戏服务条款或当地法律的场景。教程刻意不提供任何真实游戏的偏移量、也不提供可直接作弊的自瞄实现；所有动手练习都应在"你自己写的 demo 程序"上完成。
 
 [![语言](https://img.shields.io/badge/language-C%2FC%2B%2B-blue)](https://en.wikipedia.org/wiki/C%2B%2B)
 [![协议](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
@@ -172,4 +170,4 @@ NDK 没加进系统 PATH。把 NDK 里的 `prebuilt/.../bin` 加进 PATH，或�
 
 ## 许可证
 
-本项目以 **MIT 协议** 开源。简单来说：你可以自由地看、改、用（包括商用），只要**保留原始的版权和许可声明**即可。完整文本见 [LICENSE](./LICENSE)。
+本项目以 **MIT 协议** 开源。完整文本见 [LICENSE](./LICENSE)。
