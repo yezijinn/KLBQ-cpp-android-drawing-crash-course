@@ -1,0 +1,257 @@
+---
+tags: [教程, 卷二, 二进制, ELF]
+day: 12
+aliases: [ch19]
+---
+
+# 第 19 章 · ELF 文件格式
+
+> [!abstract] 本章目标
+> 能自己读 ELF 头和程序头表，拿到 `e_entry`、段权限、以及动态符号表的位置。
+> 这是第 77 章"从模块基址找函数地址"的直接前置。
+
+## 先看一个文件的开头 64 字节
+
+```bash
+xxd -l 64 /bin/ls
+```
+
+```
+00000000: 7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
+00000010: 0300 b700 0100 0000 4011 4000 0000 0000  ........@.@.....
+00000020: 4000 0000 0000 0000 ...
+```
+
+第一行的 `7f 45 4c 46` 就是魔数 `\x7fELF`。**所有 Linux/Android 的可执行文件、
+动态库、`.o` 文件，都是这个开头。**
+
+逐字节解读：
+
+| 偏移 | 字节 | 含义 |
+|---|---|---|
+| 0x00 | `7f 45 4c 46` | 魔数 `\x7f E L F` |
+| 0x04 | `02` | EI_CLASS：1=32位，2=64位 → **64 位** |
+| 0x05 | `01` | EI_DATA：1=小端，2=大端 → **小端** |
+| 0x06 | `01` | EI_VERSION：版本，恒为 1 |
+| 0x07 | `00` | EI_OSABI：0=SysV，3=Linux |
+| 0x10 | `03 00` | e_type：1=REL(.o)，2=EXEC，**3=DYN(.so)** |
+| 0x12 | `b7 00` | e_machine：**0xB7 = AArch64**（0x3C=x86_64, 0x03=x86） |
+| 0x18 | `4011 4000...` | e_entry：程序入口地址 |
+
+> [!tip] 常量速记
+> ```
+> 0xB7 = AArch64    0x3C = x86_64    0x03 = i386    0x28 = ARM
+> e_type: 1=REL  2=EXEC  3=DYN  4=CORE
+> ```
+
+## ELF 的两张表
+
+ELF 文件有两个视角：
+
+```
+┌─────────────────────────────────────┐
+│  ELF Header                          │  ← 文件开头，描述两张表在哪
+├─────────────────────────────────────┤
+│  Program Header Table (段表)          │  ← 给"加载器"看：怎么把文件映射进内存
+│   PT_LOAD / PT_DYNAMIC / ...         │
+├─────────────────────────────────────┤
+│  段内容 (.text .data ...)             │
+├─────────────────────────────────────┤
+│  Section Header Table (节表)          │  ← 给"链接器/调试器"看：符号在哪
+│   .symtab .strtab .dynsym ...        │
+└─────────────────────────────────────┘
+```
+
+| 表 | 给谁看 | 关键结构 | 运行时需要吗 |
+|---|---|---|---|
+| 程序头表（Program Header） | 内核加载器 | `PT_LOAD` 段 | **必须** |
+| 节头表（Section Header） | 链接器、调试器 | `.symtab` `.text` | 可删（strip 就是删它） |
+
+**运行时只需要程序头表。** 这就是为什么 strip 之后程序照样能跑。
+
+## ELF Header 结构（64 位）
+
+```c
+#include <elf.h>     // 系统自带，直接用
+
+typedef struct {
+    unsigned char e_ident[16];   // 魔数 + 各种标识
+    uint16_t e_type;             // 文件类型
+    uint16_t e_machine;          // 架构
+    uint32_t e_version;
+    uint64_t e_entry;            // 入口虚拟地址
+    uint64_t e_phoff;            // 程序头表在文件中的偏移
+    uint64_t e_shoff;            // 节头表在文件中的偏移
+    uint32_t e_flags;
+    uint16_t e_ehsize;           // ELF 头大小（64 字节）
+    uint16_t e_phentsize;        // 每个程序头多大（56 字节）
+    uint16_t e_phnum;            // 程序头数量
+    uint16_t e_shentsize;
+    uint16_t e_shnum;            // 节头数量
+    uint16_t e_shstrndx;         // 节名字符串表索引
+} Elf64_Ehdr;
+```
+
+## Program Header（段的描述）
+
+```c
+typedef struct {
+    uint32_t p_type;      // 段类型
+    uint32_t p_flags;     // 权限：1=X 2=W 4=R
+    uint64_t p_offset;    // 在文件中的偏移
+    uint64_t p_vaddr;     // 应该映射到哪个虚拟地址（相对基址）
+    uint64_t p_paddr;     // 物理地址（用户态不用）
+    uint64_t p_filesz;    // 文件里占多少字节
+    uint64_t p_memsz;     // 内存里占多少字节
+    uint64_t p_align;     // 对齐
+} Elf64_Phdr;
+```
+
+| `p_type` | 值 | 含义 |
+|---|---|---|
+| `PT_NULL` | 0 | 忽略 |
+| `PT_LOAD` | 1 | **需要加载进内存的段**（最重要） |
+| `PT_DYNAMIC` | 2 | 动态链接信息 |
+| `PT_INTERP` | 3 | 解释器路径（如 `/system/bin/linker64`） |
+| `PT_NOTE` | 4 | 附加信息 |
+
+> [!note] `p_memsz > p_filesz` 的情况
+> `.bss` 段在文件里不占空间（全是 0，不必存），但内存里要占位。
+> 所以 `p_memsz` 比 `p_filesz` 大的那部分，加载器要**补零**。
+
+## 动手：解析一个 ELF 头
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <elf.h>
+
+int main(int argc, char **argv) {
+    if (argc < 2) { printf("用法: %s <elf文件>\n", argv[0]); return 1; }
+
+    FILE *fp = fopen(argv[1], "rb");
+    if (!fp) { perror("fopen"); return 1; }
+
+    Elf64_Ehdr eh;
+    if (fread(&eh, 1, sizeof(eh), fp) != sizeof(eh)) {
+        printf("读 ELF 头失败\n"); return 1;
+    }
+
+    // 1. 检查魔数
+    if (eh.e_ident[0] != 0x7f || eh.e_ident[1] != 'E' ||
+        eh.e_ident[2] != 'L' || eh.e_ident[3] != 'F') {
+        printf("不是 ELF 文件\n"); return 1;
+    }
+
+    printf("类别   : %s\n", eh.e_ident[EI_CLASS] == 2 ? "64位" : "32位");
+    printf("字节序 : %s\n", eh.e_ident[EI_DATA] == 1 ? "小端" : "大端");
+    printf("类型   : ");
+    switch (eh.e_type) {
+        case ET_REL:  printf("可重定位 (.o)\n"); break;
+        case ET_EXEC: printf("可执行文件\n"); break;
+        case ET_DYN:  printf("动态库/PIE\n"); break;
+        default:      printf("其它 (%d)\n", eh.e_type); break;
+    }
+    printf("架构   : 0x%X %s\n", eh.e_machine,
+           eh.e_machine == 0xB7 ? "(AArch64)" :
+           eh.e_machine == 0x3C ? "(x86_64)" : "");
+    printf("入口   : 0x%llX\n", (unsigned long long)eh.e_entry);
+    printf("程序头 : 偏移 0x%llX  数量 %d  每个 %d 字节\n",
+           (unsigned long long)eh.e_phoff, eh.e_phnum, eh.e_phentsize);
+
+    // 2. 遍历程序头表
+    fseek(fp, eh.e_phoff, SEEK_SET);
+    printf("\n%-10s %-6s %-12s %-12s %-10s\n",
+           "TYPE", "FLAGS", "VADDR", "FILESZ", "MEMSZ");
+    for (int i = 0; i < eh.e_phnum; i++) {
+        Elf64_Phdr ph;
+        if (fread(&ph, 1, sizeof(ph), fp) != sizeof(ph)) break;
+
+        const char *t = ph.p_type == PT_LOAD ? "LOAD" :
+                        ph.p_type == PT_DYNAMIC ? "DYNAMIC" :
+                        ph.p_type == PT_INTERP ? "INTERP" :
+                        ph.p_type == PT_NOTE ? "NOTE" : "OTHER";
+        char flags[4] = "---";
+        if (ph.p_flags & PF_R) flags[0] = 'r';
+        if (ph.p_flags & PF_W) flags[1] = 'w';
+        if (ph.p_flags & PF_X) flags[2] = 'x';
+
+        printf("%-10s %-6s 0x%010llX 0x%010llX 0x%08llX\n",
+               t, flags,
+               (unsigned long long)ph.p_vaddr,
+               (unsigned long long)ph.p_filesz,
+               (unsigned long long)ph.p_memsz);
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+编译运行：
+
+```bash
+gcc -Wall elfhead.c -o elfhead
+./elfhead /bin/ls
+# 或者解析一个 .so
+./elfhead /system/lib64/libc.so
+```
+
+你会看到 3~5 个 `LOAD` 段：R、R+X（代码）、R+W（数据）。
+对照第 17 章的 `/proc/pid/maps`——**那些段的权限就是这么来的。**
+
+## 段与节的对应
+
+| 常见节（Section） | 会被合并进哪个段 |
+|---|---|
+| `.text` `.rodata` | 只读段 / 代码段 |
+| `.data` `.bss` `.got` | 可读写段 |
+| `.init_array` | 可读写段（构造函数表） |
+| `.dynsym` `.dynstr` | 可读写段（动态链接需要） |
+
+## strip 之后少了什么
+
+```bash
+cp /bin/ls ls_copy
+strip ls_copy
+ls -l /bin/ls ls_copy        # 后者明显变小
+nm ls_copy                    # 提示 "no symbols"
+./ls_copy                     # 照样能跑
+```
+
+strip 删掉的是**节头表里那些调试/符号节**（`.symtab`、`.strtab`、`.debug_*`），
+以及整个节头表。程序头表还在，所以照样能加载。
+
+> [!note] 对本项目的影响
+> 目标程序如果是 strip 过的（几乎所有发布版本都是），
+> 你就**不能**靠符号名找函数，只能靠硬编码偏移。
+> 这也是为什么本项目 `Android.mk` 里有 `-s`（strip）：让自己的产物也无从分析。
+> 第 77 章会讲 strip 之后怎么找东西。
+
+## 一个必须知道的点：file offset vs vaddr
+
+```
+文件里的偏移 p_offset  ←→  内存里的虚拟地址 p_vaddr
+```
+
+两者不相同，但有一个固定关系（对同一个段）：
+
+```
+vaddr = 基址 + p_vaddr
+文件偏移 = p_offset + (vaddr - (基址 + p_vaddr))
+```
+
+读一个"文件里的地址"和读一个"内存里的地址"要用不同的偏移。
+**本项目全部是读内存**，所以一律用 `基址 + p_vaddr`。
+
+## 验收清单
+
+- [ ] 能从 16 进制里认出 ELF 魔数 `7f 45 4c 46`
+- [ ] 知道 `e_type` 3 = 动态库、`e_machine` 0xB7 = AArch64
+- [ ] 能说出程序头表（给加载器）和节头表（给链接器）的区别
+- [ ] 编译运行了 ELF 头解析程序，看到至少 3 个 LOAD 段及其权限
+- [ ] 理解 `p_offset`（文件）与 `p_vaddr`（内存）的区别
+- [ ] 知道 strip 删了什么、为什么程序还能跑
+
+→ 下一章：[[第20章-动态链接GOT与PLT]]　—— 理解"调用一个 .so 里的函数"在运行时是怎么找到地址的。

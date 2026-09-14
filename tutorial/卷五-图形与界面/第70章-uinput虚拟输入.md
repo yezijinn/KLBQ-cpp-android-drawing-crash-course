@@ -1,0 +1,323 @@
+---
+tags: [教程, 卷五, Android, uinput]
+day: 43
+aliases: [ch70]
+---
+
+# 第 70 章 · uinput 虚拟输入
+
+> [!abstract] 本章目标
+> 学会用 `/dev/uinput` 创建一个虚拟触摸设备，并注入触摸事件。
+> 这是 `TouchHelperA.cpp` 后半部分的内容。
+
+## 先看 uinput 是什么
+
+`uinput`（user input）是内核提供的机制：
+**让用户态程序创建一个"假的"输入设备**，然后往里写事件，
+内核会把这些事件当成真实硬件产生的，分发给所有监听者。
+
+```
+你的程序
+    │  写 input_event
+    ↓
+/dev/uinput
+    ↓
+内核 input 子系统
+    ↓  当成真实设备
+/dev/input/eventN  ← 新创建的虚拟设备
+    ↓
+InputReader → InputDispatcher → App
+```
+
+## 创建虚拟触摸设备
+
+```c
+#include <linux/input.h>
+#include <linux/uinput.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+
+int CreateVirtualTouch(int screenW, int screenH) {
+    int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+    if (fd < 0) { perror("open /dev/uinput"); return -1; }
+
+    // 1. 声明支持哪些事件类型
+    ioctl(fd, UI_SET_EVBIT, EV_ABS);     // 绝对坐标
+    ioctl(fd, UI_SET_EVBIT, EV_KEY);     // 按键
+    ioctl(fd, UI_SET_EVBIT, EV_SYN);     // 同步
+
+    // 2. 声明支持哪些键
+    ioctl(fd, UI_SET_KEYBIT, BTN_TOUCH);
+    ioctl(fd, UI_SET_KEYBIT, BTN_TOOL_FINGER);
+
+    // 3. 声明支持哪些绝对轴 + 设置范围
+    struct uinput_abs_setup absSetup = {};
+
+    absSetup.code = ABS_MT_SLOT;
+    absSetup.absinfo.maximum = 9;              // 最多 10 个触点
+    ioctl(fd, UI_ABS_SETUP, &absSetup);
+    ioctl(fd, UI_SET_ABSBIT, ABS_MT_SLOT);
+
+    absSetup.code = ABS_MT_TRACKING_ID;
+    absSetup.absinfo.maximum = 0xFFFF;
+    ioctl(fd, UI_ABS_SETUP, &absSetup);
+    ioctl(fd, UI_SET_ABSBIT, ABS_MT_TRACKING_ID);
+
+    absSetup.code = ABS_MT_POSITION_X;
+    absSetup.absinfo.minimum = 0;
+    absSetup.absinfo.maximum = screenW;        // ★ 与屏幕一致
+    ioctl(fd, UI_ABS_SETUP, &absSetup);
+    ioctl(fd, UI_SET_ABSBIT, ABS_MT_POSITION_X);
+
+    absSetup.code = ABS_MT_POSITION_Y;
+    absSetup.absinfo.maximum = screenH;
+    ioctl(fd, UI_ABS_SETUP, &absSetup);
+    ioctl(fd, UI_SET_ABSBIT, ABS_MT_POSITION_Y);
+
+    // 4. 单点触摸兼容（有些 App 只认这个）
+    ioctl(fd, UI_SET_ABSBIT, ABS_X);
+    ioctl(fd, UI_SET_ABSBIT, ABS_Y);
+    absSetup.code = ABS_X; absSetup.absinfo.maximum = screenW;
+    ioctl(fd, UI_ABS_SETUP, &absSetup);
+    absSetup.code = ABS_Y; absSetup.absinfo.maximum = screenH;
+    ioctl(fd, UI_ABS_SETUP, &absSetup);
+
+    // 5. 设备属性
+    ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);   // 直触屏（不是触摸板）
+
+    // 6. 填写设备信息
+    struct uinput_setup setup = {};
+    strcpy(setup.name, "Virtual Touch");
+    setup.id.bustype = BUS_VIRTUAL;
+    setup.id.vendor  = 0x1234;
+    setup.id.product = 0x5678;
+    setup.id.version = 1;
+    ioctl(fd, UI_DEV_SETUP, &setup);
+
+    // 7. 创建！
+    if (ioctl(fd, UI_DEV_CREATE) < 0) {
+        perror("UI_DEV_CREATE");
+        close(fd);
+        return -1;
+    }
+
+    printf("虚拟触摸设备创建成功\n");
+    return fd;
+}
+```
+
+七个步骤，顺序不能乱：**SET_EVBIT → SET_KEYBIT → 设置 ABS 范围 → SET_PROPBIT → DEV_SETUP → DEV_CREATE**。
+
+## 注入事件
+
+```c
+void EmitEvent(int fd, __u16 type, __u16 code, __s32 value) {
+    struct input_event ev = {};
+    gettimeofday(&ev.time, nullptr);
+    ev.type  = type;
+    ev.code  = code;
+    ev.value = value;
+    write(fd, &ev, sizeof(ev));
+}
+
+void TouchDown(int fd, int slot, int x, int y) {
+    EmitEvent(fd, EV_ABS, ABS_MT_SLOT, slot);
+    EmitEvent(fd, EV_ABS, ABS_MT_TRACKING_ID, slot + 1000);  // 唯一 ID
+    EmitEvent(fd, EV_ABS, ABS_MT_POSITION_X, x);
+    EmitEvent(fd, EV_ABS, ABS_MT_POSITION_Y, y);
+    EmitEvent(fd, EV_KEY, BTN_TOUCH, 1);
+    EmitEvent(fd, EV_SYN, SYN_REPORT, 0);      // ★ 必须有
+}
+
+void TouchMove(int fd, int slot, int x, int y) {
+    EmitEvent(fd, EV_ABS, ABS_MT_SLOT, slot);
+    EmitEvent(fd, EV_ABS, ABS_MT_POSITION_X, x);
+    EmitEvent(fd, EV_ABS, ABS_MT_POSITION_Y, y);
+    EmitEvent(fd, EV_SYN, SYN_REPORT, 0);
+}
+
+void TouchUp(int fd, int slot) {
+    EmitEvent(fd, EV_ABS, ABS_MT_SLOT, slot);
+    EmitEvent(fd, EV_ABS, ABS_MT_TRACKING_ID, -1);    // -1 = 抬起
+    EmitEvent(fd, EV_KEY, BTN_TOUCH, 0);
+    EmitEvent(fd, EV_SYN, SYN_REPORT, 0);
+}
+```
+
+> [!danger] `SYN_REPORT` 不能忘
+> 没有同步信号，内核会把事件攒着不生效。
+> 症状："写了但没反应"。
+
+## 销毁设备
+
+```c
+ioctl(fd, UI_DEV_DESTROY);
+close(fd);
+```
+
+**程序退出前必须销毁**，否则虚拟设备残留，系统里多一个无效输入设备。
+
+## 本项目的封装
+
+`TouchHelperA.cpp` 里的对应代码：
+
+```cpp
+// 初始化
+nowfd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+ioctl(nowfd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);
+ioctl(nowfd, UI_SET_EVBIT, EV_ABS);
+ioctl(nowfd, UI_SET_ABSBIT, ABS_X);
+ioctl(nowfd, UI_SET_ABSBIT, ABS_Y);
+ioctl(nowfd, UI_SET_ABSBIT, ABS_MT_POSITION_X);
+ioctl(nowfd, UI_SET_ABSBIT, ABS_MT_POSITION_Y);
+ioctl(nowfd, UI_SET_ABSBIT, ABS_MT_TRACKING_ID);
+ioctl(nowfd, UI_SET_EVBIT, EV_SYN);
+ioctl(nowfd, UI_SET_EVBIT, EV_KEY);
+ioctl(nowfd, UI_SET_KEYBIT, BTN_TOUCH);
+ioctl(nowfd, UI_SET_KEYBIT, BTN_TOOL_FINGER);
+```
+
+还有一段"复制物理设备能力"的逻辑：
+
+```cpp
+// 读取真实触摸屏支持的按键，照抄到虚拟设备
+if (ioctl(fd, EVIOCGID, &id) == 0) {
+    // ...
+    res = ioctl(fd, EVIOCGBIT(EV_KEY, bits_size), bits);
+    for (int j = 0; j < bits_size; j++)
+        for (int k = 0; k < 8; k++)
+            if (bits[j] & (1 << k))
+                ioctl(nowfd, UI_SET_KEYBIT, j * 8 + k);   // 照抄
+}
+```
+
+**为什么要照抄**：让虚拟设备和真实设备能力一致，
+这样 App 不会因为它"缺少某个能力"而忽略它。
+
+## 触摸槽位（slot）机制
+
+多点触控用槽位区分手指：
+
+```
+slot 0: 手指 A
+slot 1: 手指 B
+...
+```
+
+每个槽位有独立的 `TRACKING_ID`：
+- 按下：分配一个新的正数 ID
+- 移动：ID 不变
+- 抬起：发送 `-1`
+
+本项目：
+
+```cpp
+struct touchObj {
+    My_Vector2 pos{};
+    int id = 0;
+    bool isDown = false;
+};
+
+struct Device {
+    int fd;
+    float S2TX;
+    float S2TY;
+    input_absinfo absX, absY;
+    touchObj Finger[10];      // 最多 10 个手指
+};
+```
+
+## 权限
+
+```bash
+ls -l /dev/uinput
+# crw-rw---- 1 root uhid 10, 223 uinput
+```
+
+需要 root 或者相应权限。有些 ROM 直接没有这个设备节点：
+
+```bash
+adb shell ls -l /dev/uinput
+# ls: /dev/uinput: No such file or directory   ← 内核没开 CONFIG_INPUT_UINPUT
+```
+
+**没有 uinput 时用不了软件注入**，只能用内核驱动方案（第 78 章）。
+
+## 限制与检测
+
+| 限制 | 说明 |
+|---|---|
+| Android 有 `INJECT_EVENTS` 权限 | 系统签名或 root 才有 |
+| 部分 ROM 禁用了 uinput | 内核没编译该模块 |
+| 注入的事件可被区分 | 通过设备名/厂商 ID 能识别是虚拟设备 |
+| 注入有延迟 | 经过内核 input 子系统，比真实触摸慢几毫秒 |
+
+## 动手：虚拟点击器
+
+```c
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/time.h>
+#include <linux/input.h>
+#include <linux/uinput.h>
+
+// （插入上面的 CreateVirtualTouch / EmitEvent / TouchDown/Move/Up）
+
+int main(int argc, char **argv) {
+    int W = 1080, H = 2400;
+    int fd = CreateVirtualTouch(W, H);
+    if (fd < 0) return 1;
+
+    sleep(1);   // 等设备被系统识别
+
+    printf("3 秒后在屏幕中心点击...\n");
+    sleep(3);
+
+    int cx = W / 2, cy = H / 2;
+    TouchDown(fd, 0, cx, cy);
+    usleep(50000);              // 按住 50ms
+    TouchUp(fd, 0);
+
+    printf("点击完成\n");
+
+    // 滑动演示
+    printf("3 秒后滑动...\n");
+    sleep(3);
+    TouchDown(fd, 0, 200, 1200);
+    for (int x = 200; x < 900; x += 50) {
+        TouchMove(fd, 0, x, 1200);
+        usleep(16000);
+    }
+    TouchUp(fd, 0);
+    printf("滑动完成\n");
+
+    ioctl(fd, UI_DEV_DESTROY);
+    close(fd);
+    return 0;
+}
+```
+
+测试方法：打开一个能画画的 App 或者"开发者选项→指针位置"，
+看有没有出现触摸轨迹。
+
+```bash
+# 开启指针位置显示（超好用）
+adb shell settings put system pointer_location 1
+```
+
+## 验收清单
+
+- [ ] 知道 uinput 是"用户态创建虚拟输入设备"的机制
+- [ ] 能说出创建虚拟触摸设备的七个步骤和顺序
+- [ ] 知道 `SYN_REPORT` 必须发
+- [ ] 知道 `TRACKING_ID = -1` 表示抬起
+- [ ] 理解多点触控的 slot 机制
+- [ ] 知道销毁时要 `UI_DEV_DESTROY`
+- [ ] 知道某些 ROM 可能没有 `/dev/uinput`
+- [ ] 跑通了虚拟点击器，看到点击/滑动生效 ★
+
+→ 下一章：[[第71章-读取并转发真实触摸]]　—— 实现"独占读取 + 处理后重新注入"的完整回路，让覆盖层既能接收触摸，又不妨碍游戏操作。

@@ -1,0 +1,32 @@
+# ===== 本地编辑器 / 工具配置（不进仓库）=====
+.obsidian/
+.vscode/
+.workbuddy/
+
+# ===== 操作系统无关 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== NDK 编译产物（每次编译都会变，体积大，不要提交）=====
+libs/
+obj/
+*.o
+*.o.d
+*.a
+*.so
+*.apk
+
+# ===== IDE / 构建缓存 =====
+*.swp
+*~
+build/
+cmake-build-*/
+
+# ===== Python 缓存（工具脚本用得到）=====
+__pycache__/
+*.pyc
+
+# ===== 日志 / 临时文件 =====
+*.log
+tmp/
