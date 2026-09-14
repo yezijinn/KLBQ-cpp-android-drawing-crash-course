@@ -5,7 +5,6 @@
 [![协议](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![Stars](https://img.shields.io/github/stars/yezijinn/KLBQ-cpp-android-drawing-crash-course?style=social)](https://github.com/yezijinn/KLBQ-cpp-android-drawing-crash-course/stargazers)
 
-> 上面三行是徽章占位：语言 / 协议 / Star 数（Star 是动态变化的，仓库发布后才会显示）。
 
 ## 这是什么（一句话简介）
 
@@ -35,12 +34,9 @@
 
 ## 效果预览（占位）
 
-> 把下面的图片换成你自己的截图 / GIF（建议放在仓库的 `assets/` 目录，再在这里用相对路径引用）。
 
 ![效果预览](assets/preview.png)
 
-> 一段演示视频（可选）：把视频上传到图床 / B 站后，把链接填到这里：
-> `[演示视频](https://...)`
 
 ## 快速开始（三步走）
 
