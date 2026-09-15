@@ -124,8 +124,8 @@ adb shell "ls -l /data/local/tmp"      # 带空格要加引号
 adb shell su -c "命令"                  # 以 root 执行
 ```
 
-shell 里的可用命令是有限的玩具箱（toolbox/toybox），
-但常用 Linux 命令都有：`ls cd cat grep ps top kill chmod chown mount getprop setprop`。
+Android 的 shell 是一个**精简的命令集**（叫 toolbox 或 toybox）——它是 Android 自带的简化版 Linux 工具，
+命令比电脑上的 Linux 少，但常用 Linux 命令都有：`ls cd cat grep ps top kill chmod chown mount getprop setprop`。
 
 > [!note] 没有 bash 的完整特性
 > Android 的 shell 是 `mksh`/`ash`，不支持 bash 的数组、双方括号条件测试等。
