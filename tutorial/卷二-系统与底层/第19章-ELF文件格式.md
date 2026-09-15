@@ -10,6 +10,14 @@ aliases: [ch19]
 > 能自己读 ELF 头和程序头表，拿到 `e_entry`、段权限、以及动态符号表的位置。
 > 这是第 77 章"从模块基址找函数地址"的直接前置。
 
+> [!note] `xxd` 是什么
+> `xxd` 是一个"**十六进制查看器**"——把文件的字节按十六进制+ASCII 两栏打印出来。
+> ```bash
+> xxd -l 64 /bin/ls     # -l 64 表示"只看前 64 字节"
+> ```
+> 左边是偏移，中间是十六进制字节，右边是 ASCII 字符（不可打印的显示为 `.`）。
+> **看二进制文件（ELF、图片、任意数据）都用它。** Windows 上没有 `xxd`，可用 `certutil -dump` 或 WSL。
+
 ## 先看一个文件的开头 64 字节
 
 ```bash
@@ -119,6 +127,44 @@ typedef struct {
 > `.bss` 段在文件里不占空间（全是 0，不必存），但内存里要占位。
 > 所以 `p_memsz` 比 `p_filesz` 大的那部分，加载器要**补零**。
 
+> [!note] 这段代码用到的几个新语法，先集中说明
+> 下面的解析程序用到几个卷一没讲过的东西，这里一次讲清：
+>
+> **① `main(int argc, char **argv)` —— 命令行参数**
+> 你的程序可以接受"启动时传进来的参数"。`argc` 是参数个数，`argv` 是参数字符串数组：
+> ```c
+> int main(int argc, char **argv) {
+>     // 运行 ./elfhead /bin/ls
+>     // argc = 2
+>     // argv[0] = "./elfhead"（程序自己的名字）
+>     // argv[1] = "/bin/ls"（第一个真正的参数）
+> }
+> ```
+> **`argv[0]` 永远是程序名**，真正的参数从 `argv[1]` 开始。
+>
+> **② `switch` 语句 —— 多分支选择**
+> 当"要比较的是同一个值、有很多种情况"时，`switch` 比一串 `if/else if` 更清晰：
+> ```c
+> switch (e_type) {
+>     case ET_REL:  printf("可重定位"); break;   // 等于 ET_REL 时走这里
+>     case ET_EXEC: printf("可执行");   break;
+>     default:      printf("其它");     break;   // 都不匹配时
+> }
+> ```
+> 规则：每个 `case` 末尾要 `break`（否则会"贯穿"到下一个 case）；`default` 处理"其它情况"。
+>
+> **③ `fseek(fp, 偏移, 起点)` —— 移动文件读写位置**
+> ```c
+> fseek(fp, eh.e_phoff, SEEK_SET);   // 从文件开头（SEEK_SET）跳到偏移 e_phoff 处
+> ```
+> 起点可以是 `SEEK_SET`（开头）、`SEEK_CUR`（当前位置）、`SEEK_END`（末尾）。第 11 章"求文件大小"用过它。
+>
+> **④ `perror("xxx")` —— 打印错误信息**
+> ```c
+> if (!fp) { perror("fopen"); return 1; }   // 打印：fopen: No such file or directory
+> ```
+> 它会根据 `errno`（系统记录的最近一次错误）打印可读的错误原因。
+
 ## 动手：解析一个 ELF 头
 
 ```c
@@ -209,6 +255,11 @@ gcc -Wall elfhead.c -o elfhead
 | `.data` `.bss` `.got` | 可读写段 |
 | `.init_array` | 可读写段（构造函数表） |
 | `.dynsym` `.dynstr` | 可读写段（动态链接需要） |
+
+> [!note] `nm` 是符号表查看器（第 27 章详讲）
+> 下面的 `nm` 命令用来**列出文件里的符号**（函数、变量）。
+> `nm ls_copy` 输出 "no symbols" 就说明这个文件被 strip 过、没有符号信息了。
+> 第 27 章会系统讲 `nm`，第 30 章讲 `nm`/`objdump`/`readelf` 三件套。
 
 ## strip 之后少了什么
 

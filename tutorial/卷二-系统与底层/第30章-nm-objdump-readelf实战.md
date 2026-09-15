@@ -160,6 +160,8 @@ aarch64-linux-android-objdump -d klbq | grep -A20 -B5 'f234:'
 > 1. 临时去掉 `-s` 重新编译一份
 > 2. 或链接时保留符号副本：`objcopy --only-keep-debug klbq klbq.debug`
 > 3. 用 `addr2line -e klbq.debug 0xf234`
+>
+> （`objcopy` 是 binutils 里的"复制/转换目标文件"工具，`--only-keep-debug` 表示"只保留调试信息到新文件"。）
 
 ### 看懂崩溃地址的含义
 
