@@ -209,13 +209,22 @@ adb shell getprop sys.boot_completed       # 是否启动完成
 adb shell setprop debug.mytag 1            # 设置（需权限）
 ```
 
-本项目用 `getprop` 判断 Android 版本，从而选择不同的 SurfaceFlinger 符号（第 66 章）：
+本项目用 `getprop` 判断 Android 版本，从而选择不同的 SurfaceFlinger 符号（第 66 章）。
+
+上面 `getprop` 是 shell 命令；在 C 代码里读属性用 `__system_property_get`：
 
 ```cpp
-char sdk[PROP_VALUE_MAX];
-__system_property_get("ro.build.version.sdk", sdk);
-int apiLevel = atoi(sdk);
+#include <sys/system_properties.h>   // 属性 API 头文件
+
+char sdk[PROP_VALUE_MAX];            // PROP_VALUE_MAX 是属性值最大长度（92）
+__system_property_get("ro.build.version.sdk", sdk);   // 把属性值读进 sdk
+int apiLevel = atoi(sdk);            // "29" → 29
 ```
+
+> [!note] `__system_property_get` / `PROP_VALUE_MAX` 是什么
+> 它们是 Android 的**系统属性读取 API**（在 `<sys/system_properties.h>`）——就是 `getprop` 命令的底层实现。
+> `PROP_VALUE_MAX` 是属性值缓冲区的最小安全长度（必须按它开数组）。
+> **第 66 章会用它做版本判断**，这里先认识。
 
 ## 应用管理
 

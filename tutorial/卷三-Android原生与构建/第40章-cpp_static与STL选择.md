@@ -33,10 +33,14 @@ STL = C++ 标准库的实现，包含：
 | 工具 | `optional` `string_view` `span`（C++17/20） |
 | 运行时 | 异常处理、RTTI、new/delete |
 
+> [!note] RTTI 是什么
+> **RTTI = Run-Time Type Information**（运行时类型信息）：让程序在**运行时**还能知道"这个对象到底是什么类型"。
+> 它是 `dynamic_cast`（安全向下转型）和 `typeid` 的基础。关掉 RTTI（`-fno-rtti`）能省体积，但就不能用 `dynamic_cast` 了。
+
 Android NDK 提供的是 **libc++**（LLVM 的实现）。
 
 命名空间是 `std::__ndk1`（内部），
-这样即使系统里有另一份 STL 也不会冲突。
+这样即使系统里有另一份 STL 也不会冲突。**`__ndk1` 是 NDK 给 libc++ 加的后缀**，防止和系统自带的 `std` 冲突——你写代码时仍写 `std::vector`，不用管它。
 
 ## 两种链接方式
 

@@ -193,6 +193,12 @@ vkGetDeviceQueue(device, queueFamily, 0, &queue);
 
 ## 辅助对象：命令池与描述符池
 
+> [!note] "描述符"和"描述符池"是什么
+> **描述符（Descriptor）** = 告诉 GPU"这个着色器要用哪块纹理/缓冲区"的**凭证**。
+> 你不能直接把纹理塞给着色器，而是先创建一个描述符指向它，再在绘制时"绑定描述符"。
+> 描述符统一放在 **描述符池（DescriptorPool）** 里分配——所以创建池是初始化的必经步骤。
+> 本项目 ImGui 渲染时，每个纹理对应一个描述符（第62章会看到 `VkDescriptorSet`）。
+
 ```cpp
 // 命令池：分配命令缓冲
 VkCommandPoolCreateInfo poolInfo = {};

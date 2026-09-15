@@ -8,7 +8,7 @@ aliases: [ch42]
 
 > [!abstract] 本章目标
 > 学会把"源码形式的第三方库"塞进 ndk-build 工程，并跑通第一个 ImGui 程序。
-> 本项目 `jni/src/ImGui/` 下 8 个 .cpp 就是这么来的。
+> 本项目 `jni/src/ImGui/` 下有 **10 个 .cpp**：ImGui 核心 5 个（`imgui` / `imgui_draw` / `imgui_tables` / `imgui_widgets` / `imgui_impl_vulkan`）+ 本项目自己的 5 个（Android 适配、字体、触摸、stb 等），就是这么来的。
 
 ## 先看 ImGui 需要哪些文件
 
@@ -75,8 +75,8 @@ LOCAL_SRC_FILES += src/ImGui/imgui_widgets.cpp
 LOCAL_SRC_FILES += src/ImGui/imgui_impl_vulkan.cpp
 ```
 
-三个文件要一起加（`imgui.cpp` + `imgui_draw.cpp` + `imgui_widgets.cpp`），
-少了任何一个都会 `undefined reference`。
+核心的 4 个 .cpp 要一起加（`imgui.cpp` + `imgui_draw.cpp` + `imgui_tables.cpp` + `imgui_widgets.cpp`），
+少了任何一个都会 `undefined reference`。（若用 Vulkan 后端，还要加 `imgui_impl_vulkan.cpp`。）
 
 ## 需要的宏
 

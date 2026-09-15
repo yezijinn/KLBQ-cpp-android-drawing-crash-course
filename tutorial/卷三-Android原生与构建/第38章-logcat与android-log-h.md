@@ -186,6 +186,19 @@ if (mkdir("/sdcard/dump", 0777) != 0 && errno != EEXIST) {
 1. 格式化字符串（vsnprintf）
 2. 通过 socket 写给 logd 守护进程
 
+> [!note] `v` 前缀是什么意思
+> `printf` 家族的**名字里带 `v` 的，参数是 `va_list`**（"可变参数列表"），而不是"一个接一个的参数"。
+> 对比：
+> ```c
+> printf("...", a, b);          // 普通版：直接列参数
+> vprintf("...", ap);           // v 版：接收一个 va_list
+>
+> snprintf(buf, n, "...", a);   // 普通版
+> vsnprintf(buf, n, "...", ap); // v 版
+> ```
+> **为什么需要 v 版**：当你要"把收到的可变参数原样转发给 printf"时，没法直接转发（参数个数不定），
+> 只能先 `va_start` 拿到 `va_list`，再用 `v` 版输出。第 38 章前面 `FileLog::write` 就是这么做的。
+
 开销约 **几十微秒**。**绝对不要放在每帧循环里**：
 
 ```cpp
@@ -243,6 +256,15 @@ private:
     FILE *fp_ = nullptr;
 };
 ```
+
+> [!note] 上面用到的可变参数机制（`va_list` 等）**
+> 想让函数像 `printf` 一样"参数个数不定"，要用这套：
+> - `void write(const char *fmt, ...)`：`...` 表示"后面还可以接任意个参数"
+> - `va_list ap; va_start(ap, fmt);`：开始遍历可变参数
+> - `vfprintf(fp_, fmt, ap);`：用"可变参数版"的 printf 输出（`vfprintf` 对应 `fprintf`）
+> - `va_end(ap);`：结束遍历
+>
+> **固定四步：`va_list` → `va_start` → 用 `v...` 函数 → `va_end`。** 本项目日志/格式化函数都是这个模式。
 
 `fflush` 代价高但能保证崩溃时日志不丢——调试崩溃问题时值得。
 

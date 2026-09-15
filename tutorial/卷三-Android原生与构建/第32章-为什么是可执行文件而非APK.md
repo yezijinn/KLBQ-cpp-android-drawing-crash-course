@@ -161,8 +161,8 @@ APK（有界面、能上架）
 └── （可选）依赖的 .so
 ```
 
-主程序是**全静态链接**的（ImGui + Embree + c++_static 都打进去了），
-只动态依赖系统自带的 `liblog.so`、`libandroid.so`、`libz.so`。
+主程序**除系统库外全部静态链接**（ImGui + Embree + c++_static 都打进了同一个文件），
+只动态依赖 Android 系统自带的 `liblog.so`、`libandroid.so`、`libz.so`（这些每个设备都有，不用你带）。
 
 验证：
 
@@ -198,6 +198,12 @@ adb shell "su -c 'echo \$UID'"                # root 的 uid（有 root 才行�
 ```
 
 **C. 看看能不能加载私有库**
+
+> [!note] `dlopen` / `dlsym` 是"运行时加载动态库"（第 65 章详讲）**
+> - `dlopen("libxxx.so", 标志)`：**在运行时打开一个 .so**，返回它的句柄
+> - `dlsym(句柄, "符号名")`：**从库里找到某个函数/变量的地址**
+> - `dlerror()`：取最近一次 `dlopen`/`dlsym` 的错误信息
+> 它们让"加载库、找符号"从"编译时自动"变成"运行时手动"。本章用它验证命名空间限制，**第 65 章会完整讲。**
 
 ```c
 #include <dlfcn.h>

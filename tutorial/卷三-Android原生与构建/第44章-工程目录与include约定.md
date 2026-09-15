@@ -91,6 +91,11 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/src/Android_draw
 | 宏 | 全大写下划线 | `PAGE_SIZE`、`BP_SET_MASK` |
 | 常量 | `constexpr` 小写或 `k` 前缀 | `kMaxCount` |
 
+> [!note] `k` 前缀的来历
+> `kMaxCount` 里的 `k` 没有语法含义，是一种**命名风格**（源自 Google C++ 风格指南）：
+> 用 `k` 开头表示"这是个编译期常量"（k = constant 的首字母），一眼和普通变量区分开。
+> 用不用随你，**关键是全项目统一**：要么都 `kXxx`，要么都 `XXX_MAX`，别混。
+
 **本项目用了大量中文标识符**（第 15 章讲过）：
 
 ```cpp
@@ -165,6 +170,13 @@ struct ImDrawList;          // 前向声明，不用 #include "imgui.h"
 
 void DrawPlayer(ImDrawList *draw);
 ```
+
+> [!note] 为什么只写一行 `struct ImDrawList;` 就够了
+> 因为编译器处理到 `void DrawPlayer(ImDrawList *draw);` 时，**只需要知道"ImDrawList 是一个类型名"**，
+> 不需要知道它内部长什么样——参数是个**指针**，指针大小固定（8 字节），跟指向的类型细节无关。
+>
+> 什么时候必须真 `#include`：**用到类型的内部**时，比如访问 `draw->CmdBuffer`（取成员）、
+> `sizeof(ImDrawList)`（求大小）、或定义该类型的对象。这时光有"名字"不够，得有完整定义。
 
 本项目 `draw.h` 和 `Draw_ESP.h` 就是这么做的。
 

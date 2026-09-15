@@ -33,6 +33,13 @@ LOCAL_SRC_FILES := include/Embree/libembree4.a
 include $(PREBUILT_STATIC_LIBRARY)
 ```
 
+> [!note] `$(CLEAR_VARS)` 到底是什么
+> 它不是普通变量，而是 **ndk-build 预置的一个"脚本片段路径"**——内部其实是 `build/core/clear_vars.mk`。
+> `include $(CLEAR_VARS)` 相当于"把那个文件包含进来执行"，而那个文件的内容就是"把一堆 `LOCAL_*` 变量清空"。
+> 这也解释了为什么写 `$(CLEAR_VARS)`（取值）而不是直接写名字——**make 需要先取出这个路径，再 include 它**。
+>
+> 为什么要清空：ndk-build 用同一组 `LOCAL_*` 变量描述"当前模块"。定义新模块前不清空，就会把上一个模块的设置带进来。
+
 `CLEAR_VARS` 会清空除 `LOCAL_PATH` 外的所有 `LOCAL_*` 变量。
 所以每定义一个模块，都要先 `CLEAR_VARS`。
 
@@ -94,7 +101,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/Android_draw
 ...
 ```
 
-8 个头文件路径。加了之后源码里可以直接 `#include "draw.h"`。
+10 个头文件路径。加了之后源码里可以直接 `#include "draw.h"`。
 
 > [!tip] 用 `$(LOCAL_PATH)` 而不是相对路径
 > 相对路径是相对于**执行 ndk-build 的目录**，换个目录执行就崩。
@@ -103,11 +110,11 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/Android_draw
 ```makefile
 LOCAL_SRC_FILES := src/main.cpp
 LOCAL_SRC_FILES += src/Android_draw/draw_Gui.cpp
-...（共 18 个）
+...（共 20 个）
 ```
 
-注意**没有** `src/ImGui/heiti_ttf.cpp` 之外的字体文件——因为字体是 `.cpp`
-里的大数组（`g_heiti_ttf_data[]`），直接编译进去。
+字体是 `src/ImGui/heiti_ttf.cpp` 里的一个**大字节数组**（`g_heiti_ttf_data[]`），
+直接编译进程序——所以工程里**没有单独的 `.ttf` 字体文件**。
 
 ```makefile
 LOCAL_LDLIBS := -llog -landroid -lz

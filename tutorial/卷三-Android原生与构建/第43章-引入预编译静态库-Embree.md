@@ -16,6 +16,10 @@ aliases: [ch43]
 给它一堆三角形，它构建 BVH 加速结构，然后你可以问：
 "从 A 点射向 B 点，撞到什么了吗？"
 
+> [!note] 两个缩写
+> - **BVH = Bounding Volume Hierarchy**（包围体层次结构）：把一堆三角形组织成树，让"射线撞到谁"不用逐个三角形试，快很多。
+> - **RTC = Ray Tracing Core**：Embree 所有 API 的前缀（`rtcNewDevice`、`rtcIntersect1`……），表示"光线追踪核心"。
+
 ```cpp
 RTCDevice device = rtcNewDevice(nullptr);
 RTCScene  scene  = rtcNewScene(device);
@@ -37,16 +41,15 @@ if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
 ## 6 个库的关系
 
 ```
-libembree4.a      核心：BVH 构建、遍历、几何管理
-   │
-   ├── libtasking.a   任务调度（多线程并行构建）
-   │      └── libsys.a      系统抽象（线程、文件、内存）
-   │             └── libmath.a    数学工具
-   │                    └── libsimd.a   SIMD 抽象（SSE/AVX/NEON）
-   └── liblexers.a    解析器（.obj 加载等）
+libembree4.a      核心：BVH 构建、遍历、几何管理    ← 最上层（用其它库）
+liblexers.a       解析器（.obj 加载等）
+libmath.a         数学工具
+libsys.a          系统抽象（线程、文件、内存）
+libtasking.a      任务调度（多线程并行构建）
+libsimd.a         SIMD 抽象（SSE/AVX/NEON）          ← 最底层（被其它库用）
 ```
 
-依赖方向：**上层在前，底层在后**。
+依赖方向：**上层在前、下层在后；被依赖的库放右边**。上面的排列与下方 `LOCAL_STATIC_LIBRARIES` 的顺序一致。
 
 ```makefile
 LOCAL_STATIC_LIBRARIES := \
@@ -148,9 +151,9 @@ int main(void) {
     rayhit.ray.flags = 0;
     rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
-    RTCIntersectContext ctx;
-    rtcInitIntersectContext(&ctx);
-    rtcIntersect1(scene, &ctx, &rayhit);
+    RTCIntersectArguments args;
+    rtcInitIntersectArguments(&args);        // Embree 4：初始化参数结构体
+    rtcIntersect1(scene, &rayhit, &args);    // Embree 4：scene, rayhit, args
 
     // 5. 看结果
     if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
@@ -171,12 +174,35 @@ int main(void) {
 
 **1. `rtcIntersect1` 的参数顺序（Embree 4）**
 
+Embree 4 **改了 `rtcIntersect1` 的签名**，上下文类型从 `RTCIntersectContext` 换成了 `RTCIntersectArguments`，参数顺序也变了：
+
 ```cpp
-rtcIntersect1(scene, &ctx, &rayhit);     // Embree 4：scene, context, rayhit
-// Embree 3 是 rtcIntersect1(scene, &ctx, &rayhit) 也一样，但结构定义有差异
+// —— Embree 4（本项目用的版本）——
+RTCIntersectArguments args;
+rtcInitIntersectArguments(&args);
+rtcIntersect1(scene, &rayhit, &args);    // 顺序：scene, rayhit, args
+
+// 不需要高级参数时，args 可以传 NULL：
+rtcIntersect1(scene, &rayhit, nullptr);
+
+// —— Embree 3（旧版本，不要照抄）——
+// RTCIntersectContext ctx;
+// rtcInitIntersectContext(&ctx);
+// rtcIntersect1(scene, &ctx, &rayhit);  // 旧顺序：scene, context, rayhit
 ```
 
-版本不同签名可能变，看 `rtcore.h` 里的声明。
+> [!danger] 别把两代 API 混用
+> - Embree 3：类型 `RTCIntersectContext`，函数 `rtcInitIntersectContext`，调用 `rtcIntersect1(scene, &ctx, &rayhit)`
+> - **Embree 4：类型 `RTCIntersectArguments`，函数 `rtcInitIntersectArguments`，调用 `rtcIntersect1(scene, &rayhit, &args)`**
+>
+> 混用会编译报错（类型不匹配）或行为错误。**认准版本，看 `rtcore_ray.h` / `rtcore_scene.h` 里的声明。**
+
+> [!note] 本项目实际怎么调的
+> 本项目的遮挡判定不需要 filter 等高级参数，所以直接传 `nullptr`（`jni/include/Embree/PhysX.h`）：
+> ```cpp
+> rtcIntersect1(this->scene, &rayhit, nullptr);   // 第 3 参传 NULL 即可
+> ```
+> 上面的 `RTCIntersectArguments` 写法是"需要高级参数时"的完整形式，两者签名一致。
 
 **2. 必须先 `rtcCommitGeometry` 再 `rtcCommitScene`**
 

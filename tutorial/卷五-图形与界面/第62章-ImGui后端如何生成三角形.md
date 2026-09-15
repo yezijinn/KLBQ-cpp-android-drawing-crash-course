@@ -58,6 +58,11 @@ vkUnmapMemory(device, vertexBufferMemory);
 
 ImGui 的 Vulkan 后端预先创建好：
 
+> [!note] RenderPass（渲染通道）是什么
+> 一次"渲染"不是直接往屏幕上画，而是先声明"我要用什么附件（颜色/深度）、开始时清不清空、结束时保存不保存"。
+> 这份声明就是 **RenderPass**。Vulkan 要求你**先定义 RenderPass，再在它里面发起绘制**。
+> 下面代码里的 `VK_ATTACHMENT_LOAD_OP_CLEAR`（每帧清空）、`finalLayout = PRESENT_SRC_KHR`（结束时供显示）就是在声明这些。
+
 ```cpp
 // 渲染通道：一个颜色附件，加载时清空
 VkAttachmentDescription attachment = {};

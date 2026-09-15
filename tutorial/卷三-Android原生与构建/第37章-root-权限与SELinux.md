@@ -24,6 +24,11 @@ cat: /proc/1234/mem: Permission denied      ← ？？？
 
 ## 三道关卡
 
+> [!note] 两个缩写：DAC 与 MAC
+> - **DAC = Discretionary Access Control**（自主访问控制）：就是第 04 章讲的 `rwx` 权限位——**由文件主人自己决定**谁能访问。`chmod` 改的就是它。
+> - **MAC = Mandatory Access Control**（强制访问控制）：由**系统统一策略**强制规定，文件主人也不能随便改。SELinux 就是 MAC。
+> 一句话：DAC 看"你是谁 + 文件权限"，MAC 看"策略允不允许"。
+
 ```
 你的操作
    │

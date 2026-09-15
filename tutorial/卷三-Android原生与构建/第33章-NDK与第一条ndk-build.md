@@ -12,6 +12,11 @@ aliases: [ch33]
 
 ## 第一步：安装 NDK
 
+> [!note] NDK 是什么
+> **NDK = Native Development Kit**（原生开发工具包），谷歌提供的一套工具，
+> 让你能用 C/C++ 写出在 Android 上运行的程序。装好它之后，你才有"交叉编译器"和"系统头文件"。
+
+
 | 方式 | 分发形式 | 放哪里 | 说明 |
 |---|---|---|---|
 | **命令行工具包**（推荐） | 便携包（`.zip`） | `C:\dev\android-ndk-r27c` | 只下载 NDK，约 1~2GB，无需 Android Studio |
@@ -97,6 +102,11 @@ ndk-build --version
 
 ## 路线 A：直接用 clang 编译（最快看到结果）
 
+> [!note] 这段代码用到的两个新东西
+> - `#include <android/log.h>` + `__android_log_print(...)`：**Android 的原生日志函数**，把日志写到 logcat。
+>   `ANDROID_LOG_INFO` 是日志级别。第 38 章会系统讲日志；**这里先照抄**。
+> - `#define LOGI(...) ...`：宏定义（第 10 章讲过 `#define`），把 `__android_log_print` 包一层，少打点字。
+
 ```c
 // hello.c
 #include <stdio.h>
@@ -128,7 +138,23 @@ $NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android21-clang.c
 | `clang.cmd` | Windows 上是 .cmd，Linux/Mac 上无后缀 |
 | `-llog` | 链接 `liblog.so`（用 `__android_log_print` 必需） |
 
+> [!note] 路线 A 的 `21` 和路线 B 的 `android-25` 是什么关系？
+> 它们是**同一个概念的两种写法**，都表示"最低支持到哪个 Android 版本"：
+> - **路线 A**（直接 clang）：版本写在**编译器名字**里——`aarch64-linux-android`**`21`**`-clang`
+> - **路线 B**（ndk-build）：版本写在 `Application.mk` 的 **`APP_PLATFORM := android-25`**
+>
+> 数字可以不同（这里 21 vs 25 只是示例），表示"支持的最低 API 等级"：
+> - 数字**越小**，能在越多老设备上跑，但用的新 API 越少
+> - 数字**越大**，能用越多新 API，但老设备跑不了
+>
+> **只要"编译时的最低版本" ≤ "设备的实际版本"，程序就能跑。** 后面的章节统一用 `android-25`。
+
 验证产物：
+
+> [!note] `file` 命令
+> `file <文件>` 会**读取文件开头，判断它是什么类型**（ELF？脚本？图片？）以及架构。
+> 卷二的 `xxd`（看字节）、`readelf`（看 ELF 结构）是同类工具，`file` 是最快的"一眼看是什么"。
+
 
 ```bash
 file hello_arm64
@@ -167,9 +193,17 @@ adb logcat -s HelloNDK
 | `error: only position independent executables (PIE) are supported` | 没开 PIE | 加 `-fPIE -pie` |
 
 > [!note] Android 5.0+ 强制 PIE
+> **PIE = Position Independent Executable**（位置无关可执行文件）：代码里不使用固定绝对地址，
+> 而是靠相对偏移，这样程序能加载到任意位置（配合 ASLR 随机化）。
+> 现代 NDK 默认开启 PIE，不用你手动加。
 > 现代 NDK 默认开启 PIE。如果手动指定了 `-no-pie` 或用很老的编译器，
 > 会报上面的错误。解决：加 `-fPIE -pie`。
 
+
+> [!note] ABI 是什么
+> **ABI = Application Binary Interface**（应用二进制接口）：规定"程序跑在什么 CPU 架构、用什么调用约定、二进制怎么摆"。
+> 常见值：`arm64-v8a`（64 位 ARM）、`armeabi-v7a`（32 位 ARM）、`x86_64`（模拟器）。
+> 它比"架构"含义更广——同样 64 位 ARM，不同的调用约定也算不同 ABI。第 39 章会专门讲。
 ## 路线 B：ndk-build（本项目的正式构建方式）
 
 建目录结构：
