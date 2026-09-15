@@ -213,11 +213,11 @@ aarch64-linux-android-readelf -d app_shared | grep NEEDED
 
 ## 验收清单
 
-- [ ] 知道 libc++ 是 NDK 的 STL 实现
-- [ ] 能说出 `c++_static` / `c++_shared` 的取舍
+- [ ] 知道 libc++ 是 NDK 的 STL 实现（说出命名空间 std::__ndk1）
+- [ ] 能说出 `c++_static` / `c++_shared` 的取舍（大小/部署/异常传播对比）
 - [ ] 知道本项目为什么选 `c++_static`（单文件、无自己的 .so）
-- [ ] 知道静态 STL 的"异常跨库边界"问题及何时该用动态
+- [ ] 知道静态 STL 的"异常跨库边界"问题及何时该用动态（说出多 .so 传异常需 shared）
 - [ ] 知道减少 STL 体积的 3 个技巧（避免 regex/iostream、用 string_view）
-- [ ] 完成两种 STL 的对比实验，看到 NEEDED 差异
+- [ ] 完成两种 STL 的对比实验，看到 NEEDED 差异（shared 版多 libc++_shared.so）
 
 → 下一章：[[第41章-体积与符号裁剪]]　—— 掌握 `-ffunction-sections` / `--gc-sections` / `-flto` / `strip` 四件套，并知道调试时该关掉哪个。

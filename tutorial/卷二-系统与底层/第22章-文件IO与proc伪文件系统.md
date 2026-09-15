@@ -344,11 +344,11 @@ int main(int argc, char **argv) {
 
 ## 验收清单
 
-- [ ] 知道 `open/read/write` 与 `fopen/fread` 的区别及各自适用场合
-- [ ] 知道 fd 0/1/2 分别是什么，以及 fd 泄漏的后果
-- [ ] 会设置 `open` 的 flags 和权限位
-- [ ] 知道 `read` 可能"短读"，以及怎么处理
-- [ ] 能用 `fgets` + `sscanf` 解析 `/proc/pid/maps`
-- [ ] 完成并运行了 maps 解析器
+- [ ] 知道 `open/read/write` 与 `fopen/fread` 的区别及各自适用场合（说出"系统调用无缓冲、标准库带缓冲；按行用 fgets"）
+- [ ] 知道 fd 0/1/2 分别是什么，以及 fd 泄漏的后果（说出 stdin/stdout/stderr，泄漏会 EMFILE）
+- [ ] 会设置 `open` 的 flags 和权限位（写 `open(path, O_WRONLY|O_CREAT, 0644)` 并验证文件创建）
+- [ ] 知道 `read` 可能"短读"，以及怎么处理（写出循环读直到读满的代码）
+- [ ] 能用 `fgets` + `sscanf` 解析 `/proc/pid/maps`（运行解析器，正确输出每行的区间和权限）
+- [ ] 完成并运行了 maps 解析器（`./mapscan self` 输出所有 r-xp 区间）
 
 → 下一章：[[第23章-进程间通信概览]]　—— 知道 6 种主流 IPC 各自的代价和适用场合，并理解本项目为什么选"共享内存 + 轮询标志"而不是别的。

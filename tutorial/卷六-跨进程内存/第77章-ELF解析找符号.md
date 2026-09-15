@@ -300,12 +300,12 @@ int main(int argc, char **argv) {
 
 ## 验收清单
 
-- [ ] 知道解析五步：ELF头 → PT_DYNAMIC → Dyn 键值对 → 符号表/字符串表 → 遍历
-- [ ] 会读 `DT_SYMTAB` / `DT_STRTAB` / `DT_SYMENT`
-- [ ] 知道真实地址 = base + st_value
-- [ ] 知道单个读慢，要批量读符号表和字符串表
-- [ ] 知道 strip 后只剩 `.dynsym`，且内部全局变量通常不在里面
-- [ ] 知道 GNU Hash 与 SysV Hash 的区别
-- [ ] 跑通了符号查找器，用系统库验证成功
+- [ ] 知道解析五步：ELF头 → PT_DYNAMIC → Dyn 键值对 → 符号表/字符串表 → 遍历（复述五步）
+- [ ] 会读 `DT_SYMTAB` / `DT_STRTAB` / `DT_SYMENT`（从 PT_DYNAMIC 读出这三项）
+- [ ] 知道真实地址 = base + st_value（说出公式）
+- [ ] 知道单个读慢，要批量读符号表和字符串表（说出为什么）
+- [ ] 知道 strip 后只剩 `.dynsym`，且内部全局变量通常不在里面（说出为什么导不出）
+- [ ] 知道 GNU Hash 与 SysV Hash 的区别（说出 GNU Hash 查找更快）
+- [ ] 跑通了符号查找器，用系统库验证成功（查到 libc 里某符号的地址）
 
 → 下一章：[[第78章-内核模块与用户态通信-概念]]　—— 理解内核模块是什么、它能做什么、以及用户态怎么跟它说话。

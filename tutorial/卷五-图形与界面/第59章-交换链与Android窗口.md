@@ -309,13 +309,13 @@ for (auto& f : fmts)
 
 ## 验收清单
 
-- [ ] 理解交换链解决"撕裂"问题（双/三缓冲）
-- [ ] 知道 `ANativeWindow` 是 BufferQueue 的生产者接口
-- [ ] 会创建 `VkSurfaceKHR`（需要 `VK_USE_PLATFORM_ANDROID_KHR`）
-- [ ] 知道 `compositeAlpha` 必须设为 `POST_MULTIPLIED` 才能透明 ★
-- [ ] 知道几种呈现模式的区别（FIFO 一定支持）
-- [ ] 知道每帧三步：acquire → render → present
-- [ ] 知道尺寸变化要重建交换链，且必须先 waitIdle
-- [ ] 跑通了能力查询，确认设备支持透明合成
+- [ ] 理解交换链解决"撕裂"问题（双/三缓冲）（说出"一个显示、一个绘制"）
+- [ ] 知道 `ANativeWindow` 是 BufferQueue 的生产者接口（说出生产/消费关系）
+- [ ] 会创建 `VkSurfaceKHR`（需要 `VK_USE_PLATFORM_ANDROID_KHR`）（成功创建 surface）
+- [ ] 知道 `compositeAlpha` 必须设为 `POST_MULTIPLIED` 才能透明 ★（说出用 OPAQUE 会变黑块）
+- [ ] 知道几种呈现模式的区别（FIFO 一定支持）（说出 FIFO/MAILBOX/IMMEDIATE 差异）
+- [ ] 知道每帧三步：acquire → render → present（按顺序复述）
+- [ ] 知道尺寸变化要重建交换链，且必须先 waitIdle（说出为什么）
+- [ ] 跑通了能力查询，确认设备支持透明合成（输出支持 POST_MULTIPLIED）
 
 → 下一章：[[第60章-动态加载libvulkan]]　—— 理解"不链接也能用 Vulkan"的做法，以及它为什么对本项目是必需的。

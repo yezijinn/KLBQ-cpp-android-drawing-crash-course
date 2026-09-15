@@ -291,12 +291,12 @@ ndk-build -B
 
 ## 验收清单
 
-- [ ] 能解释本项目 `Android.mk` 每一段的作用
-- [ ] 知道 `$(call my-dir)` 必须在最前面
-- [ ] 知道预编译静态库的三要素和引用方式
-- [ ] 能说出 `-fvisibility=hidden` 和 `-ffunction-sections` 的作用
-- [ ] 知道调试时要改哪三处（APP_OPTIM / -s / -g）
-- [ ] 会在 .mk 里加源文件、include 路径、预编译库
-- [ ] 完成动手练习，并见过"源文件路径写错"的报错
+- [ ] 能解释本项目 `Android.mk` 每一段的作用（逐段说出 CLEAR_VARS/预编译库/主模块/链接 的作用）
+- [ ] 知道 `$(call my-dir)` 必须在最前面（说出"它返回最后 include 的文件目录"）
+- [ ] 知道预编译静态库的三要素和引用方式（说出 LOCAL_MODULE/LOCAL_SRC_FILES/PREBUILT_STATIC_LIBRARY）
+- [ ] 能说出 `-fvisibility=hidden` 和 `-ffunction-sections` 的作用（前者隐藏符号，后者每函数独立节供裁剪）
+- [ ] 知道调试时要改哪三处（APP_OPTIM / -s / -g）（改完重编，产物变大、addr2line 可用）
+- [ ] 会在 .mk 里加源文件、include 路径、预编译库（各加一次并编译通过）
+- [ ] 完成动手练习，并见过"源文件路径写错"的报错（漏写 src/ 看报错）
 
 → 下一章：[[第35章-push到手机并运行]]　—— 建立一套稳定的"编译 → 推送 → 运行 → 看日志"工作流，并写成脚本。

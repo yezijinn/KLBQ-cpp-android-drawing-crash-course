@@ -312,11 +312,11 @@ mkdir -p myproject/{jni/{include/{Core,Platform,Render,Memory},src/{Core,Platfor
 
 ## 验收清单
 
-- [ ] 能画出本项目的目录结构，并说出每个目录的作用
-- [ ] 知道 include/src 镜像、按功能分层的约定
-- [ ] 知道源文件必须 UTF-8 无 BOM
-- [ ] 会用前向声明减少 include 依赖
-- [ ] 建好了自己的工程骨架，能一键构建运行
-- [ ] 写了 .gitignore，libs/obj 不进版本库
+- [ ] 能画出本项目的目录结构，并说出每个目录的作用（画 jni/include/src/libs/obj 并标注）
+- [ ] 知道 include/src 镜像、按功能分层的约定（说出"看到 .h 就知道 .cpp 在哪"）
+- [ ] 知道源文件必须 UTF-8 无 BOM（用带 BOM 文件编译看 stray 报错）
+- [ ] 会用前向声明减少 include 依赖（写 `struct X;` 代替 #include，编译通过）
+- [ ] 建好了自己的工程骨架，能一键构建运行（`./scripts/run.sh` 跑通）
+- [ ] 写了 .gitignore，libs/obj 不进版本库（`git status` 看不到 libs/obj）
 
 → 下一卷：[[卷四-本卷导航]] · [[第45章-向量]]　—— 从"箭头"到代码，掌握向量的四种运算，并理解它们在游戏里的实际含义。

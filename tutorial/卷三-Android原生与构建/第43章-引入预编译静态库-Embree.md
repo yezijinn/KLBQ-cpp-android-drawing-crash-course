@@ -326,12 +326,12 @@ Embree 的 6 个库也是同样的道理，只是数量多、顺序有讲究。
 
 ## 验收清单
 
-- [ ] 知道 Embree 是干什么的（BVH + 光线求交）
-- [ ] 能说出 6 个库的分工和依赖方向
-- [ ] 会在 Android.mk 里声明预编译静态库
-- [ ] 知道 `PREBUILT_STATIC_LIBRARY` 的三要素
-- [ ] 会写第一个 Embree 程序：建设备/场景/三角形/射线 ★
-- [ ] 知道 `rtcCommitGeometry` → `rtcCommitScene` 的顺序
-- [ ] 知道要先初始化 `hit.geomID = RTC_INVALID_GEOMETRY_ID`
+- [ ] 知道 Embree 是干什么的（BVH + 光线求交）（说出"构建 BVH，回答射线撞到什么"）
+- [ ] 能说出 6 个库的分工和依赖方向（embree/lexers/math/sys/tasking/simd 各管什么）
+- [ ] 会在 Android.mk 里声明预编译静态库（写一个 PREBUILT_STATIC_LIBRARY 块）
+- [ ] 知道 `PREBUILT_STATIC_LIBRARY` 的三要素（LOCAL_MODULE/LOCAL_SRC_FILES/include 指令）
+- [ ] 会写第一个 Embree 程序：建设备/场景/三角形/射线 ★（运行输出"命中！距离 = 10.00"）
+- [ ] 知道 `rtcCommitGeometry` → `rtcCommitScene` 的顺序（说出"先提交几何再提交场景构 BVH"）
+- [ ] 知道要先初始化 `hit.geomID = RTC_INVALID_GEOMETRY_ID`（说出"否则没命中也是垃圾值"）
 
 → 下一章：[[第44章-工程目录与include约定]]　—— 建立一套能长期维护的目录规范，并复刻本项目的组织结构。

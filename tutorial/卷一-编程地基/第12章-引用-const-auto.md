@@ -456,11 +456,11 @@ void HandleActors(const uint64_t arrayAddr, const int32_t count) {
 
 ## 验收清单
 
-- [ ] 能说出引用和指针的三个区别
-- [ ] 知道什么时候用 `const &` 传参（大结构体、只读）
-- [ ] 能看懂 `const virtual_memory &GetMemoryInfoRef() const` 里两个 const 的含义
-- [ ] 知道 `auto a = x;` 和 `auto &a = x;` 的区别
-- [ ] 会四种 cast，至少熟练 `static_cast`
-- [ ] 完成改写练习，特别注意整数溢出
+- [ ] 能说出引用和指针的三个区别（"必须初始化/不能为空/不能改绑"）
+- [ ] 知道什么时候用 `const &` 传参（大结构体、只读）（写一个接收 `const Matrix&` 的函数，说明避免拷贝 64 字节）
+- [ ] 能看懂 `const virtual_memory &GetMemoryInfoRef() const` 里两个 const 的含义（前一个修饰返回值，后一个修饰成员函数）
+- [ ] 知道 `auto a = x;` 和 `auto &a = x;` 的区别（写两行，改 `a` 后观察原变量是否变化）
+- [ ] 会四种 cast，至少熟练 `static_cast`（用 `static_cast` 做一次 float→int）
+- [ ] 完成改写练习，特别注意整数溢出（运行改写后的代码，确认无溢出、结果正确）
 
 → 下一章：[[第13章-模板与STL容器]]　—— 会读会写简单模板，会用 `vector`/`map`/`optional`/`span`/`string_view`。

@@ -296,11 +296,11 @@ adb logcat -d -s HelloNDK | tail -20
 
 ## 验收清单
 
-- [ ] 手机已连上，`adb devices` 显示 `device`
-- [ ] **成功 push 并运行了 `hello_arm64`，看到输出** ★
-- [ ] 会在 logcat 里过滤自己的 tag
-- [ ] 知道崩溃时看 `Fatal signal` 和 `/data/tombstones/`
-- [ ] 知道 `/sdcard` 不能执行、`/data/local/tmp` 可以
-- [ ] 写了自己的一键脚本，能一条命令跑完整流程
+- [ ] 手机已连上，`adb devices` 显示 `device`（输出一行 xxx device）
+- [ ] **成功 push 并运行了 `hello_arm64`，看到输出** ★（运行程序看到 hello from arm64）
+- [ ] 会在 logcat 里过滤自己的 tag（`adb logcat -s HelloNDK` 只看到自己的日志）
+- [ ] 知道崩溃时看 `Fatal signal` 和 `/data/tombstones/`（制造一次崩溃，在 logcat 找到 Fatal signal）
+- [ ] 知道 `/sdcard` 不能执行、`/data/local/tmp` 可以（说出 noexec 原因）
+- [ ] 写了自己的一键脚本，能一条命令跑完整流程（`./run.sh` 完成编译→推送→运行→抓日志）
 
 → 下一章：[[第36章-adb全套]]　—— 掌握 adb 的完整命令集，能把设备当成一台"远程 Linux 机器"来操作。

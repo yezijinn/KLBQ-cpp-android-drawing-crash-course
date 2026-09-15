@@ -219,10 +219,10 @@ int main(void) {
 
 ## 验收清单
 
-- [ ] 能说出 APK+so 与独立可执行文件的 5 个差异
-- [ ] 知道 Android 7+ 的 linker namespace 限制，以及它为什么逼本项目选可执行文件
-- [ ] 知道 `/data/local/tmp` 的作用
-- [ ] 知道 root 下 UID=0、普通 shell UID=2000
-- [ ] 编译并 push 运行了一个 hello（哪怕只完成 A 步）
+- [ ] 能说出 APK+so 与独立可执行文件的 5 个差异（对照本章对比表，逐条复述）
+- [ ] 知道 Android 7+ 的 linker namespace 限制，以及它为什么逼本项目选可执行文件（说出 App 无法 dlopen libgui）
+- [ ] 知道 `/data/local/tmp` 的作用（说出"adb push 可写且能执行"）
+- [ ] 知道 root 下 UID=0、普通 shell UID=2000（用 `adb shell id` 和 `su -c id` 各验证一次）
+- [ ] 编译并 push 运行了一个 hello（哪怕只完成 A 步）（看到 hello from native 输出）
 
 → 下一章：[[第33章-NDK与第一条ndk-build]]　—— 装好 NDK，用两条不同路线（ndk-build / clang 直编）编译出第一个 arm64 可执行文件。

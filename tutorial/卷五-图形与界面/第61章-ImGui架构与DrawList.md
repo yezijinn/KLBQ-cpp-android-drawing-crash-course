@@ -306,12 +306,12 @@ void PrintDrawData(ImDrawData *dd) {
 
 ## 验收清单
 
-- [ ] 能说出立即模式与保留模式的区别
-- [ ] 知道 ImGui 一帧的五个步骤
-- [ ] 知道 `ImDrawList` 的三个缓冲区（Vtx/Idx/Cmd）
-- [ ] 知道为什么要分 Cmd（按纹理/裁剪分组）
-- [ ] 会区分窗口内绘制和 DrawList 直绘
-- [ ] 知道 Foreground / Background DrawList 的区别
-- [ ] 跑通了 DrawData 统计，看到顶点结构
+- [ ] 能说出立即模式与保留模式的区别（说出"立即模式无控件对象、每帧重描述"）
+- [ ] 知道 ImGui 一帧的五个步骤（NewFrame→构造 UI→Render→取 DrawData→交后端）
+- [ ] 知道 `ImDrawList` 的三个缓冲区（Vtx/Idx/Cmd）（各说一句存什么）
+- [ ] 知道为什么要分 Cmd（按纹理/裁剪分组）（说出"减少状态切换"）
+- [ ] 会区分窗口内绘制和 DrawList 直绘（写一段用 GetWindowDrawList 直绘的代码）
+- [ ] 知道 Foreground / Background DrawList 的区别（说出前者在上、后者在下）
+- [ ] 跑通了 DrawData 统计，看到顶点结构（输出顶点数、索引数、命令数）
 
 → 下一章：[[第62章-ImGui后端如何生成三角形]]　—— 理解从 `ImDrawData` 到 GPU 三角形的每一步，并能写一个极简的 CPU 光栅化后端来验证。

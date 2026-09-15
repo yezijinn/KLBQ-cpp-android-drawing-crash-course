@@ -327,11 +327,11 @@ int main(void) {
 
 ## 验收清单
 
-- [ ] 知道动态链接 vs dlopen 的关键差别（缺失时能否启动）
-- [ ] 会用 `dlopen` / `dlsym` / `dlerror` / `dlclose`
-- [ ] 知道 `IMGUI_IMPL_VULKAN_NO_PROTOTYPES` 的作用
-- [ ] 知道 Vulkan 函数分"全局"和"设备"两类，获取方式不同
-- [ ] 会用宏批量加载几十个符号
-- [ ] 实现了 mini wrapper，在没有 Vulkan 的设备上能优雅降级
+- [ ] 知道动态链接 vs dlopen 的关键差别（缺失时能否启动）（说出"直接链接缺失则启动失败"）
+- [ ] 会用 `dlopen` / `dlsym` / `dlerror` / `dlclose`（写一段打开某 .so 并取符号的代码）
+- [ ] 知道 `IMGUI_IMPL_VULKAN_NO_PROTOTYPES` 的作用（说出"改用函数指针"）
+- [ ] 知道 Vulkan 函数分"全局"和"设备"两类，获取方式不同（说出 vkGetInstanceProcAddr / vkGetDeviceProcAddr）
+- [ ] 会用宏批量加载几十个符号（写一个 X-macro 批量 dlsym）
+- [ ] 实现了 mini wrapper，在没有 Vulkan 的设备上能优雅降级（模拟 dlopen 失败，程序不崩）
 
 → 下一章：[[第61章-ImGui架构与DrawList]]　—— 理解立即模式 UI 的原理，看懂 `ImDrawList` 里到底装了什么。

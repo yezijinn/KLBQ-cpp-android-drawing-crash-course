@@ -264,12 +264,12 @@ struct PlayerController {
 
 ## 验收清单
 
-- [ ] 知道 ControlRotation 与 CameraCache/POV 的区别
-- [ ] 知道 POV 三个偏移是连续的（可一次读完）
-- [ ] 能画出 PlayerController 的五級获取链
-- [ ] 理解"只写 ControlRotation"与"同时写 POV"的差别
-- [ ] 知道 FOV 必须每帧读（开镜会变）
-- [ ] 知道 `camMakeMatrix` 的三条防御各自防什么
-- [ ] 会在 UI 上显示相机数据并验证其正确性 ★
+- [ ] 知道 ControlRotation 与 CameraCache/POV 的区别（说出"逻辑朝向 vs 实际渲染朝向"）
+- [ ] 知道 POV 三个偏移是连续的（可一次读完）（说出三个偏移连续，一次读 12 字节）
+- [ ] 能画出 PlayerController 的五級获取链（画出五级指针链）
+- [ ] 理解"只写 ControlRotation"与"同时写 POV"的差别（说出后者画面会跟着动）
+- [ ] 知道 FOV 必须每帧读（开镜会变）（说出为什么不能缓存）
+- [ ] 知道 `camMakeMatrix` 的三条防御各自防什么（逐条说出）
+- [ ] 会在 UI 上显示相机数据并验证其正确性 ★（UI 显示位置/朝向/FOV，与游戏一致）
 
 → 下一章：[[第91章-投影矩阵的两种来源]]　—— 理解"读引擎矩阵"和"自己算矩阵"的取舍，以及本项目为什么两个都保留。

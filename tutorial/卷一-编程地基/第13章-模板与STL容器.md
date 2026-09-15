@@ -731,10 +731,10 @@ int main(void) {
 
 ## 验收清单
 
-- [ ] 理解 `template <typename T>` 是什么，能写一个 `max_value`
-- [ ] 能解释 `dr->Read<float>(addr)` 背后发生了什么
-- [ ] 会用 `vector`（含 `reserve`）、`unordered_map`、`optional`、`string_view`
-- [ ] 知道 `string_view` 不拥有数据，不能返回局部变量的 view
-- [ ] 跑通了 FakeDriver，包括越界返回 0 的情况
+- [ ] 理解 `template <typename T>` 是什么，能写一个 `max_value`（写 `max_value(3,5)` 和 `max_value(1.5,2.5)` 验证泛型生效）
+- [ ] 能解释 `dr->Read<float>(addr)` 背后发生了什么（"编译器生成 float 版 Read，读 4 字节"）
+- [ ] 会用 `vector`（含 `reserve`）、`unordered_map`、`optional`、`string_view`（各写一段最小示例运行）
+- [ ] 知道 `string_view` 不拥有数据，不能返回局部变量的 view（写错误版本，观察悬空）
+- [ ] 跑通了 FakeDriver，包括越界返回 0 的情况（运行程序，确认越界读返回 0）
 
 → 下一章：[[第14章-智能指针与生命周期]]　—— 不再手写 `new`/`delete`，能用 `unique_ptr`/`shared_ptr` 表达清楚"谁拥有这块内存"。

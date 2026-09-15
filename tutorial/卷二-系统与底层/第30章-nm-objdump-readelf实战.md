@@ -328,11 +328,11 @@ objdump -d --start-address=<entry> --stop-address=<entry+64> libfoo.so
 
 ## 验收清单
 
-- [ ] 会用 `nm -C -D` 查符号，`nm -u` 查依赖
-- [ ] 会用 `readelf -h/-l/-d/--dyn-syms` 查 ELF 结构
-- [ ] 会用 `objdump -d` 反汇编指定地址范围
-- [ ] **会用 addr2line 把崩溃地址转成 文件:行号** ★
-- [ ] 能完成一次"SIGSEGV → 定位到源码行"的完整流程
-- [ ] 知道 strip 会让 addr2line 失效，以及怎么保留符号
+- [ ] 会用 `nm -C -D` 查符号，`nm -u` 查依赖（对某 .so 跑两条命令，读出导出符号和未定义符号）
+- [ ] 会用 `readelf -h/-l/-d/--dyn-syms` 查 ELF 结构（四条命令各跑一次，读出架构/段/依赖/动态符号）
+- [ ] 会用 `objdump -d` 反汇编指定地址范围（用 --start-address/--stop-address 反汇编某函数）
+- [ ] **会用 addr2line 把崩溃地址转成 文件:行号** ★（对带符号产物跑 addr2line，得到 文件:行号）
+- [ ] 能完成一次"SIGSEGV → 定位到源码行"的完整流程（从 fault addr 到源码行，走通全流程）
+- [ ] 知道 strip 会让 addr2line 失效，以及怎么保留符号（strip 后 addr2line 失效，用 --only-keep-debug 保留）
 
 → 下一卷：[[卷三-本卷导航]] · [[第31章-Android系统分层]]　—— 建立 Android 的完整分层图景，知道每层提供什么、你的程序站在哪一层。

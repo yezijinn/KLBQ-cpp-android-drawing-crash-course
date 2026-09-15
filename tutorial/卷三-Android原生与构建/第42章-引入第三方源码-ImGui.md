@@ -299,11 +299,11 @@ include $(BUILD_EXECUTABLE)
 
 ## 验收清单
 
-- [ ] 知道 ImGui 必需的 5 个 .cpp 和它们的分工
-- [ ] 会在 Android.mk 里加 include 路径和源文件
-- [ ] 知道 `IMGUI_IMPL_VULKAN_NO_PROTOTYPES` 的作用
-- [ ] 能说出 ImGui 的 5 步使用流程
-- [ ] 知道内嵌字体时 `FontDataOwnedByAtlas = false` 是必需的
-- [ ] **跑通了最小 ImGui 工程，看到顶点数输出** ★
+- [ ] 知道 ImGui 必需的 5 个 .cpp 和它们的分工（imgui/draw/tables/widgets/impl_vulkan 各管什么）
+- [ ] 会在 Android.mk 里加 include 路径和源文件（加一次并编译通过）
+- [ ] 知道 `IMGUI_IMPL_VULKAN_NO_PROTOTYPES` 的作用（说出"改用函数指针，配合动态加载"）
+- [ ] 能说出 ImGui 的 5 步使用流程（创建上下文→配置 IO→每帧 NewFrame/Render→交后端→清理）
+- [ ] 知道内嵌字体时 `FontDataOwnedByAtlas = false` 是必需的（说出"否则 free 静态数组会崩"）
+- [ ] **跑通了最小 ImGui 工程，看到顶点数输出** ★（运行程序，输出字体图集尺寸和顶点数）
 
 → 下一章：[[第43章-引入预编译静态库-Embree]]　—— 把 6 个 `.a` 文件正确链接进工程，并跑通第一个 Embree 光线投射。

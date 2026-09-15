@@ -356,12 +356,12 @@ int main(void) {
 
 ## 验收清单
 
-- [ ] 知道五个核心对象的层级关系
-- [ ] 知道每个 Vulkan 结构体都要填 `sType`
-- [ ] 知道 Android 需要 `VK_KHR_surface` + `VK_KHR_android_surface` 扩展
-- [ ] 知道设备需要 `VK_KHR_swapchain` 扩展
-- [ ] 会找支持图形的队列族
-- [ ] 知道必须检查每个 `VkResult`
-- [ ] 跑通了 Vulkan 探针，看到设备名和队列族
+- [ ] 知道五个核心对象的层级关系（Instance → PhysicalDevice → Device → Queue，画出层级）
+- [ ] 知道每个 Vulkan 结构体都要填 `sType`（说出"sType 让驱动知道结构体类型"）
+- [ ] 知道 Android 需要 `VK_KHR_surface` + `VK_KHR_android_surface` 扩展（说出各自作用）
+- [ ] 知道设备需要 `VK_KHR_swapchain` 扩展（说出为什么必需）
+- [ ] 会找支持图形的队列族（说出如何判断队列族支持图形）
+- [ ] 知道必须检查每个 `VkResult`（说出不检查的后果）
+- [ ] 跑通了 Vulkan 探针，看到设备名和队列族（运行程序，输出 GPU 名和队列族数量）
 
 → 下一章：[[第59章-交换链与Android窗口]]　—— 理解交换链为什么存在，以及 `ANativeWindow` 怎么接进 Vulkan。

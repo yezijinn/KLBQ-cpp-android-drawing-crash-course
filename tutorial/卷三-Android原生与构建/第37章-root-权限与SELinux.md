@@ -264,12 +264,12 @@ adb shell su -c dmesg | grep avc | tail -3
 
 ## 验收清单
 
-- [ ] 能说出 Android 的三层权限关卡
-- [ ] 知道 root 只解决前两层，SELinux 是第三层
-- [ ] 会用 `getenforce` 查 SELinux 模式
-- [ ] 会看 `avc: denied` 日志，能说出 scontext/tcontext 的含义
-- [ ] 知道 `setenforce 0` 只能用于临时诊断，不该永久关闭
-- [ ] 能区分 DAC 拒绝和 SELinux 拒绝
-- [ ] 完成三种拒绝的诊断练习
+- [ ] 能说出 Android 的三层权限关卡（DAC → Capabilities → SELinux）
+- [ ] 知道 root 只解决前两层，SELinux 是第三层（说出"root 也过不了 avc 策略"）
+- [ ] 会用 `getenforce` 查 SELinux 模式（输出 Enforcing 或 Permissive）
+- [ ] 会看 `avc: denied` 日志，能说出 scontext/tcontext 的含义（指出主体/客体）
+- [ ] 知道 `setenforce 0` 只能用于临时诊断，不该永久关闭（说出原因）
+- [ ] 能区分 DAC 拒绝和 SELinux 拒绝（看有没有 avc 日志）
+- [ ] 完成三种拒绝的诊断练习（DAC/root/SELinux 各制造一次并识别）
 
 → 下一章：[[第38章-logcat与android-log-h]]　—— 建立一套好用的原生日志系统，能分级、能格式化、能一键关闭。

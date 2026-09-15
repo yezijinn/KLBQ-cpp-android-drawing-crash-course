@@ -372,12 +372,12 @@ adb shell ls -ld /data/local/tmp
 
 ## 验收清单
 
-- [ ] 会用 `adb devices` / `-s` 管理多设备
-- [ ] 会用 `push/pull/shell/chmod`
-- [ ] 会用 `ps` / `pidof` 查进程，`kill` 结束进程
-- [ ] 会用 `logcat -s` / `-c` / `-d` / `-b crash`
-- [ ] 会用 `getprop` 查版本、ABI
-- [ ] 会用 `dumpsys display` 和 `dumpsys meminfo`
-- [ ] 写了设备体检脚本并保存了输出
+- [ ] 会用 `adb devices` / `-s` 管理多设备（列出设备，用 -s 指定）
+- [ ] 会用 `push/pull/shell/chmod`（推一个文件、拉回来、进 shell、改权限各一次）
+- [ ] 会用 `ps` / `pidof` 查进程，`kill` 结束进程（查到某进程 PID 并 kill）
+- [ ] 会用 `logcat -s` / `-c` / `-d` / `-b crash`（清空、dump、按 tag 过滤、看崩溃缓冲各一次）
+- [ ] 会用 `getprop` 查版本、ABI（`getprop ro.build.version.sdk` 等各查一次）
+- [ ] 会用 `dumpsys display` 和 `dumpsys meminfo`（各跑一次，读出关键信息）
+- [ ] 写了设备体检脚本并保存了输出（运行脚本，输出存成 device_info.txt）
 
 → 下一章：[[第37章-root-权限与SELinux]]　—— 理解 Android 的三层权限关卡（UID / capability / SELinux），知道为什么"明明是 root 还是被拒"。

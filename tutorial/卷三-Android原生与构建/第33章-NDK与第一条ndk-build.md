@@ -306,11 +306,11 @@ debug 版会明显更大（带调试信息），且可以用 `addr2line` 精确�
 
 ## 验收清单
 
-- [ ] NDK 装好，`ndk-build --version` 能输出
-- [ ] 用 clang 直接编译出 `hello_arm64` 并在手机上运行成功 ★
-- [ ] 知道 `aarch64-linux-android21-clang` 名字里 21 是什么意思
-- [ ] 用 ndk-build 编译出 `hello_ndk`，产物在 `libs/arm64-v8a/`
-- [ ] 会用 `adb logcat -s TAG` 过滤原生日志
-- [ ] 知道 `ndk-build V=1` 和 `ndk-build clean`
+- [ ] NDK 装好，`ndk-build --version` 能输出（看到 GNU Make 版本号）
+- [ ] 用 clang 直接编译出 `hello_arm64` 并在手机上运行成功 ★（`file hello_arm64` 显示 ARM aarch64，手机输出 hello）
+- [ ] 知道 `aarch64-linux-android21-clang` 名字里 21 是什么意思（说出"最低 API 21 = Android 5.0"）
+- [ ] 用 ndk-build 编译出 `hello_ndk`，产物在 `libs/arm64-v8a/`（`ls libs/arm64-v8a/` 看到产物）
+- [ ] 会用 `adb logcat -s TAG` 过滤原生日志（看到自己打的 log）
+- [ ] 知道 `ndk-build V=1` 和 `ndk-build clean`（`V=1` 看到完整编译命令，`clean` 清掉产物）
 
 → 下一章：[[第34章-Android.mk与Application.mk逐行]]　—— 把 KLBQ 的两个 `.mk` 文件每一行都讲透，并学会四种常见改造场景。

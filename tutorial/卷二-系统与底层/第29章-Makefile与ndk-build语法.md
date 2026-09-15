@@ -414,12 +414,12 @@ proj/
 
 ## 验收清单
 
-- [ ] 知道 Makefile 规则格式，以及命令行必须用 Tab
-- [ ] 会用 `$@` `$<` `$^` 和模式规则 `%.o: %.c`
-- [ ] 知道 `-MMD -MP` + `-include` 解决头文件依赖
-- [ ] 能逐行解释本项目 `Application.mk` 的每个变量
-- [ ] 知道 `BUILD_EXECUTABLE` / `BUILD_SHARED_LIBRARY` 的区别
-- [ ] 知道 `LOCAL_LDLIBS`（系统库）和 `LOCAL_STATIC_LIBRARIES`（静态库）的区别
-- [ ] 完成了多目录 Makefile，且改头文件能触发重编译
+- [ ] 知道 Makefile 规则格式，以及命令行必须用 Tab（用空格缩进看 missing separator 报错）
+- [ ] 会用 `$@` `$<` `$^` 和模式规则 `%.o: %.c`（写一条模式规则，编译多个 .c）
+- [ ] 知道 `-MMD -MP` + `-include` 解决头文件依赖（改一个 .h，确认 .o 被重新编译）
+- [ ] 能逐行解释本项目 `Application.mk` 的每个变量（逐行说出 APP_ABI/APP_PLATFORM/APP_STL 的作用）
+- [ ] 知道 `BUILD_EXECUTABLE` / `BUILD_SHARED_LIBRARY` 的区别（说出"前者出可执行文件，后者出 .so"）
+- [ ] 知道 `LOCAL_LDLIBS`（系统库）和 `LOCAL_STATIC_LIBRARIES`（静态库）的区别（说出各自链接什么）
+- [ ] 完成了多目录 Makefile，且改头文件能触发重编译（make 成功，改 .h 后 make 只重编相关文件）
 
 → 下一章：[[第30章-nm-objdump-readelf实战]]　—— 掌握二进制分析三件套，能独立完成"崩溃地址 → 源码行"的定位。

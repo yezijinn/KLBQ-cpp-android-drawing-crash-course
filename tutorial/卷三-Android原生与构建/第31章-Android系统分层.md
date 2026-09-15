@@ -220,11 +220,11 @@ adb shell su -c id
 
 ## 验收清单
 
-- [ ] 能画出 Android 五层结构，并说出本项目在哪一层
-- [ ] 知道 SurfaceFlinger 是合成所有图层的人
-- [ ] 知道 Binder 是主力 IPC，以及 `libgui` 内部就用了它
-- [ ] 理解"每个 App 一个 UID"的沙箱机制
-- [ ] 知道 `/data/local/tmp` 是唯一稳妥的原生程序存放位置
-- [ ] 跑通了 5 条探索命令，记录下了设备的 Android 版本、API、架构
+- [ ] 能画出 Android 五层结构，并说出本项目在哪一层（画五层图，标出"原生库层"）
+- [ ] 知道 SurfaceFlinger 是合成所有图层的人（说出"所有可见内容都由它合成"）
+- [ ] 知道 Binder 是主力 IPC，以及 `libgui` 内部就用了它（说出 `SurfaceComposerClient` 内部走 Binder）
+- [ ] 理解"每个 App 一个 UID"的沙箱机制（用 `adb shell ps -A -o USER,NAME` 看不同 App 的不同 UID）
+- [ ] 知道 `/data/local/tmp` 是唯一稳妥的原生程序存放位置（说出为什么 /sdcard 不行：noexec）
+- [ ] 跑通了 5 条探索命令，记录下了设备的 Android 版本、API、架构（保存 getprop 输出）
 
 → 下一章：[[第32章-为什么是可执行文件而非APK]]　—— 理解本项目的形态选择：独立 native 可执行文件 vs APK 里的 .so。

@@ -308,13 +308,13 @@ adb shell dumpsys SurfaceFlinger | grep -i 'hwc\|max layers'
 
 ## 验收清单
 
-- [ ] 知道屏幕画面是多个图层合成的
-- [ ] 理解 BufferQueue 的生产者-消费者模型
-- [ ] 知道 `SurfaceComposerClient` / `SurfaceControl` / `Surface` 的关系
-- [ ] 知道 `Transaction` 是原子批量修改
-- [ ] 知道 z-order 越大越靠上，以及常见层级数值
-- [ ] 知道覆盖层需要 `PIXEL_FORMAT_RGBA_8888`
-- [ ] 会用 `dumpsys SurfaceFlinger` 看图层列表 ★
-- [ ] 知道硬件合成有层数上限，覆盖层会占一个
+- [ ] 知道屏幕画面是多个图层合成的（说出状态栏/导航栏/App 各是图层）
+- [ ] 理解 BufferQueue 的生产者-消费者模型（说出谁生产、谁消费）
+- [ ] 知道 `SurfaceComposerClient` / `SurfaceControl` / `Surface` 的关系（画出三者层级）
+- [ ] 知道 `Transaction` 是原子批量修改（说出"要么全生效、要么全不生效"）
+- [ ] 知道 z-order 越大越靠上，以及常见层级数值（说出状态栏/导航栏的大致值）
+- [ ] 知道覆盖层需要 `PIXEL_FORMAT_RGBA_8888`（说出为什么需要 alpha）
+- [ ] 会用 `dumpsys SurfaceFlinger` 看图层列表 ★（运行命令，找到图层名和 Z 值）
+- [ ] 知道硬件合成有层数上限，覆盖层会占一个（说出超出会退化到 GPU 合成）
 
 → 下一章：[[第65章-dlsym-libgui创建窗口]]　—— 理解为什么不用 SDK 也能创建图层，以及 C++ 符号名（mangled name）是怎么回事。
