@@ -10,6 +10,196 @@ aliases: [ch11]
 > 理解"类 = 结构体 + 函数"，以及 RAII 这个 C++ 最重要的思想。
 > 本项目 90% 的代码是 C++，这一章是分水岭。
 
+## 从 C 到 C++：先搞清关系
+
+到这里为止，你学的都是 **C 语言**。从现在开始，你接触的代码会变成 **C++**。
+
+**先打消一个误会**：C++ **不是**一门和 C 完全无关的新语言，而是"**在 C 基础上扩展**"。
+
+| 关系 | 说明 |
+|---|---|
+| **C 是 C++ 的子集** | 几乎所有合法的 C 代码，都是合法的 C++ 代码（个别地方例外） |
+| **C++ 加了很多东西** | 类、引用、模板、命名空间、异常、STL…… |
+| **本项目用 C++20** | `Android.mk` 里写的是 `-std=c++20`（第 34 章会看到） |
+
+**所以你不会"忘掉 C 重新学"**——前面学的变量、数组、指针、结构体、函数，在 C++ 里**一模一样地继续用**。这一章开始讲的是 C++ **多出来的**那部分。
+
+### C++ 源文件的扩展名
+
+| 扩展名 | 语言 | 用什么编译器 |
+|---|---|---|
+| `.c` | C | `gcc` |
+| `.cpp` / `.cc` / `.cxx` | C++ | `g++` |
+| `.h` | 头文件（C 或 C++ 都可能） | 看被谁包含 |
+
+**本项目几乎所有源文件都是 `.cpp`**（`.h` 也是 C++ 风格），只有少量遗留 C 代码。
+
+### 用 `g++` 编译 C++
+
+```bash
+g++ -std=c++20 -Wall -Wextra hello.cpp -o hello.exe
+./hello.exe
+```
+
+**`-std=c++20` 指定 C++ 标准版本**（本项目用 C++20，卷一的练习用 `c++17` 或 `c++20` 都行）。
+
+```cpp
+// hello.cpp
+#include <iostream>   // C++ 的输入输出头文件
+
+int main() {
+    std::cout << "Hello, C++\n";
+    return 0;
+}
+```
+
+> [!note] `std::cout` 是 C++ 的输出方式
+> C 里用 `printf`，C++ 里可以用 `std::cout`（读作"C-out"）：
+> ```cpp
+> std::cout << "内容" << 变量 << "\n";   // << 表示"往输出流里塞东西"
+> ```
+> 但**本项目大量使用 `printf`**——因为 C 风格的 `printf` 格式化更灵活（`%.2f` 之类），而且 NDK 环境下更好控制。
+> **两种都能用，看项目习惯。** 本教程后面也主要用 `printf`，偶尔用 `std::cout`。
+
+## C++ 第一个新东西：`std` 命名空间
+
+C++ 标准库的东西都放在一个叫 `std` 的**命名空间**里。所以标准库的东西都要写 `std::` 前缀：
+
+```cpp
+std::cout         // 标准输出
+std::string       // 标准字符串
+std::vector       // 标准动态数组
+std::printf       // （也有，但一般直接用 C 的 printf）
+```
+
+**什么是命名空间**？简单说，就是"给一堆名字套一层前缀，避免重名"。
+
+```cpp
+namespace GameTools {
+    void WorldToScreen();
+}
+
+namespace MyUtils {
+    void WorldToScreen();   // 和上面同名，但不冲突
+}
+
+GameTools::WorldToScreen();   // 用的时候加上前缀
+MyUtils::WorldToScreen();
+```
+
+**这就是为什么你看到 `std::vector`、`std::string` 这种写法**——它们是 `std` 这个命名空间里的名字。
+
+> [!warning] 不要在头文件里 `using namespace std;`
+> 你可以写 `using namespace std;` 让 `std::` 前缀省掉：
+> ```cpp
+> using namespace std;
+> cout << "hi\n";        // 省掉 std::
+> ```
+> **但千万别写在头文件里**——它会让所有包含这个头文件的文件都"被污染"，可能引发名字冲突。
+> 本项目的 `PhysX.h` 里有一句 `using namespace std;`，是历史遗留，属于应该改掉的写法。
+
+## 从"结构体"到"类"：把函数也装进去
+
+你在第 07 章学过结构体：**把几个变量打包成一个**。
+
+C++ 的类（`class`）**在结构体基础上更进一步**：**不仅能把变量打包，还能把操作这些变量的函数也打包进去。**
+
+看一个 C 的写法（你已经会的）：
+
+```c
+// C 写法：结构体 + 一组操作它的函数
+struct Player {
+    float x, y, z;
+    int   hp;
+};
+
+void damage(struct Player *p, int dmg) {
+    p->hp -= dmg;
+}
+
+int alive(const struct Player *p) {
+    return p->hp > 0;
+}
+
+// 用：
+struct Player pl = {0, 0, 0, 100};
+damage(&pl, 30);
+if (alive(&pl)) { /* ... */ }
+```
+
+**这里的问题**：`damage`、`alive` 这些函数明明是为 `Player` 服务的，却散落在外面，和 `Player` 没有任何语法上的绑定。
+
+C++ 的做法是**把它们写进 `Player` 里面**：
+
+```cpp
+// C++ 写法：类
+struct Player {
+    float x = 0, y = 0, z = 0;
+    int   hp = 100;
+
+    void damage(int dmg) { hp -= dmg; }        // 成员函数
+    bool alive() const   { return hp > 0; }    // 成员函数
+};
+
+// 用：
+Player pl;
+pl.damage(30);
+if (pl.alive()) { /* ... */ }
+```
+
+**看两个关键变化**：
+
+1. **函数写进了 `struct` 里面**——它们叫**成员函数**（member function）
+2. **调用时用 `对象.函数名(...)`**，不用再传 `p`——函数里直接就能访问 `hp`（因为函数"属于"这个对象）
+
+**这就是"面向对象"的核心思想**：**数据（字段）和操作数据的代码（成员函数）捆在一起。**
+
+### 成员函数里访问字段，不需要前缀
+
+```cpp
+struct Player {
+    int hp = 100;
+
+    void damage(int dmg) {
+        hp -= dmg;         // 直接写 hp，不用 p->hp
+    }
+};
+```
+
+**为什么能直接写 `hp`**？因为成员函数"属于"某个对象，函数体里所有裸字段名默认指的是**"当前对象的那个字段"**。
+
+**这等价于 C 的**：`p->hp -= dmg;`，只不过 `p` 被隐式地提供了。
+
+### `this`：指向当前对象的指针
+
+成员函数里有个隐含的指针 `this`，指向"调用这个函数的对象"：
+
+```cpp
+struct Player {
+    int hp = 100;
+
+    void damage(int dmg) {
+        this->hp -= dmg;    // 和直接写 hp 完全等价
+    }
+};
+```
+
+**大部分时候你不需要写 `this->`**。有两种情况必须写：
+
+1. **参数和字段重名**时：
+   ```cpp
+   void set_hp(int hp) {
+       this->hp = hp;     // this->hp 是字段，hp 是参数
+   }
+   ```
+2. **返回自身**时（链式调用）：
+   ```cpp
+   Player& setX(float v) { x = v; return *this; }
+   ```
+
+**本项目的 `driver.h` 里的自旋锁就用了 `this`。** 现在只要知道有这个东西就行，不常用。
+
+
 ## 先看同一个东西的两种写法
 
 **C 写法：**
@@ -79,6 +269,22 @@ private:
     /* 用 b */
 }                        // 离开作用域，析构自动被调用 → data_ 被释放
 ```
+
+> [!note] 上面代码里的两个新语法
+> **① `new` / `delete`**：在堆上分配/释放内存。
+> ```cpp
+> uint8_t *p = new uint8_t[100];   // 分配 100 字节
+> delete[] p;                       // 释放（数组用 delete[]）
+> ```
+> 它和 `malloc`/`free`（第 04 章讲过）类似，但更安全（会调用构造函数）。**第 14 章会详解，这里先混个眼熟。**
+>
+> **② 初始化列表 `: size_(n), data_(new uint8_t[n])`**：写在构造函数参数列表**后面**、函数体**前面**，用冒号开头。
+> 它是"**在对象创建时直接初始化成员变量**"的语法，比在函数体里赋值更高效：
+> ```cpp
+> Buffer(size_t n) : size_(n), data_(new uint8_t[n]) { }
+> //      ↑冒号    ↑size_ 初始化为 n   ↑data_ 初始化为新数组
+> ```
+> **本项目大量使用初始化列表**（`driver.h`、`PhysX.h` 里到处是）。看到 `构造函数(...) : 成员(值), 成员(值) { }` 就是这个语法。
 
 **这是 C++ 的核心：析构函数在离开作用域时自动执行，你不可能忘记释放。**
 
@@ -242,9 +448,14 @@ Bad b = a;      // b.data_ 和 a.data_ 指向同一块内存
 本项目用的是第三条路：
 
 ```cpp
-MemDriver(const MemDriver &) = delete;
-MemDriver &operator=(const MemDriver &) = delete;
+MemDriver(const MemDriver &) = delete;              // 禁止拷贝构造
+MemDriver &operator=(const MemDriver &) = delete;   // 禁止拷贝赋值
 ```
+
+> [!note] 两行分别禁止了什么
+> - 第一行禁止"用另一个对象来创建新对象"：`MemDriver b = a;`（拷贝构造）
+> - 第二行禁止"把一个对象赋给另一个"：`b = a;`（拷贝赋值，`operator=` 是"赋值运算符"）
+> **两个都禁掉，才是真的"不可拷贝"。** 这是 C++ 里表达"这个类不许复制"的标准写法。
 
 因为驱动对象持有内核连接，拷贝它没有意义。**明确禁止比留着隐患好。**
 
@@ -267,6 +478,112 @@ GameTools::WorldToScreen(&screen, pos);
 > 它会污染所有包含这个头文件的文件。本项目 `PhysX.h` 里有 `using namespace std;`
 > 是历史遗留，属于应该改掉的写法。
 
+## 补充：文件读写基础（C 的 `FILE*`）
+
+下面那个 RAII 练习会操作文件。**文件 I/O 你还没学过，先补一补**。
+
+### 打开文件：`fopen`
+
+```c
+#include <stdio.h>
+
+FILE *fp = fopen("data.bin", "rb");   // 打开文件
+if (fp == NULL) {
+    // 打开失败（文件不存在、没权限等）
+    return;
+}
+```
+
+| 参数 | 含义 |
+|---|---|
+| 第一个 | 文件路径 |
+| 第二个 | 模式字符串 |
+
+**常用模式**：
+
+| 模式 | 含义 |
+|---|---|
+| `"r"` | 只读（文件必须存在） |
+| `"w"` | 只写（文件不存在就创建，存在就清空） |
+| `"a"` | 追加（在末尾写） |
+| `"rb"` / `"wb"` | 二进制模式（本项目读二进制数据都用这个） |
+
+**`fopen` 返回 `FILE *`**（一个"文件句柄"），失败返回 `NULL`——**必须判空**。
+
+### 读写：`fread` / `fwrite`
+
+```c
+uint8_t buf[100];
+size_t n = fread(buf, 1, 100, fp);    // 从 fp 读最多 100 字节到 buf，返回实际读到的字节数
+
+uint8_t data[16] = {0};
+fwrite(data, 1, 16, fp);              // 把 data 的 16 字节写到 fp
+```
+
+| `fread` 参数 | 含义 |
+|---|---|
+| 1 | 每个元素几个字节 |
+| 2 | 读几个元素 |
+| 3 | 目标缓冲区 |
+| 4 | 文件句柄 |
+
+**返回值是"实际读到的元素个数"**。读到文件末尾时返回小于请求的数量。
+
+### 定位：`fseek` / `ftell`
+
+```c
+fseek(fp, 0, SEEK_END);      // 把读位置移到文件末尾
+long size = ftell(fp);       // 问"当前位置是第几字节"→ 就是文件大小
+fseek(fp, 0, SEEK_SET);      // 移回文件开头
+```
+
+| `fseek` 第三个参数 | 含义 |
+|---|---|
+| `SEEK_SET` | 从文件开头算 |
+| `SEEK_CUR` | 从当前位置算 |
+| `SEEK_END` | 从文件末尾算 |
+
+**"打开 → 移到末尾 → 问大小 → 移回开头"是获取文件大小的标准套路**（下面练习会用到）。
+
+### 关闭文件：`fclose`
+
+```c
+fclose(fp);      // 用完必须关（不关会泄漏文件句柄，且缓冲数据可能没落盘）
+fp = NULL;       // 好习惯：关掉后置空
+```
+
+**`fopen` 必须配 `fclose`**——和第 14 章的 `new`/`delete` 一样是"手动配对"。
+**这正是下面那个 RAII 练习要解决的问题**：把 `fclose` 放进析构函数，就不用记得手动关了。
+
+### 完整例子
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+int main(void) {
+    FILE *fp = fopen("data.bin", "rb");
+    if (fp == NULL) { printf("打不开文件\n"); return 1; }
+
+    // 求文件大小
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    printf("文件大小: %ld 字节\n", size);
+
+    // 读前 16 字节
+    uint8_t buf[16];
+    size_t n = fread(buf, 1, 16, fp);
+    printf("读到 %zu 字节\n", n);
+
+    fclose(fp);
+    return 0;
+}
+```
+
+> [!note] 这些函数属于 C 标准库（`<stdio.h>`），C++ 里是 `<cstdio>`
+> 本项目读文件、读 `/proc` 都大量用到它们。**先认识这几个，后面的章节会反复见到。**
+
 ## 动手：写一个 RAII 文件类
 
 ```cpp
@@ -276,7 +593,7 @@ GameTools::WorldToScreen(&screen, pos);
 
 class FileReader {
 public:
-    explicit FileReader(const char *path) {
+    explicit FileReader(const char *path) {   // explicit：禁止"隐式转换"式构造，见下方说明
         fp_ = fopen(path, "rb");
         if (!fp_) { valid_ = false; return; }
         fseek(fp_, 0, SEEK_END);
@@ -316,6 +633,21 @@ int main(void) {
 
 用 `gcc -std=c++17 -Wall file.cpp -o file.exe` 编译。
 注意：`main` 里没有 `fclose`，但文件一定被关闭了。
+
+> [!note] `explicit` 是什么意思
+> 加了 `explicit` 的构造函数**不允许"隐式转换"**——必须显式写出类型名才能构造。
+> ```cpp
+> FileReader a("data.bin");      // 对：显式构造
+> FileReader b = "data.bin";     // 错：explicit 禁止这种隐式转换
+> ```
+> 好处：**防止"不小心把参数类型转成了这个类"**，减少误用。
+> 只接受一个参数的构造函数，**本项目一律加 `explicit`**。
+
+> [!note] 关于"异常"
+> 本页多次提到"抛异常"（比如"即使中间抛异常，析构也会被调用"）。
+> **异常是 C++ 的错误处理机制**：出错时用 `throw` 抛出一个错误，会被 `try/catch` 捕获。
+> **卷一只需要知道"异常会导致函数提前退出"这一点**——这正是 RAII 有价值的原因（RAII 保证即使提前退出，资源也会被释放）。
+> 异常的完整用法在卷二/卷五会用到时再讲。
 
 ## 验收清单
 

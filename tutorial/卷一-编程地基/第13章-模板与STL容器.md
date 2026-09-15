@@ -10,6 +10,198 @@ aliases: [ch13]
 > 会读会写简单模板，会用 `vector`/`map`/`optional`/`span`/`string_view`。
 > 本项目 `dr->Read<T>(addr)` 这种写法就靠模板实现。
 
+## 先搞清：STL 是什么，为什么需要它
+
+到目前为止，你学的"容器"只有一种：**数组**（第 06 章）。
+
+```c
+int scores[5];      // 5 个 int，长度写死
+```
+
+数组有两个硬伤：
+
+| 硬伤 | 后果 |
+|---|---|
+| **长度固定** | 声明时写 5，就不能装 6 个；写 1000 又浪费 |
+| **不能"自动增长"** | 想加一个元素，得手动搬数据 |
+
+真实程序里，"能装多少个"往往**运行时才知道**：
+
+- 从文件读到多少个 Actor？不定
+- 网络收到多少字节？不定
+- 用户输入多长的字符串？不定
+
+**所以 C++ 标准库提供了一批"容器"**——能动态增长、能自动管理内存的"智能数组"。
+
+### 什么是 STL
+
+**STL = Standard Template Library（标准模板库）**，是 C++ 标准库的一部分，提供：
+
+| 类别 | 例子 | 作用 |
+|---|---|---|
+| **容器（container）** | `vector`、`map`、`set` | 装数据的盒子 |
+| **算法（algorithm）** | `sort`、`find`、`all_of` | 对容器做操作 |
+| **迭代器（iterator）** | `begin()`、`end()` | 遍历容器的"指针" |
+| **工具** | `pair`、`optional`、`string_view` | 各种小工具 |
+
+**你现在只要会 `vector` 和几个常用的**，剩下的用到了再说。
+
+### 为什么要有"模板"
+
+STL 容器之所以"什么类型都能装"，靠的是**模板（template）**。
+
+举个具体问题——**如果没有模板，你要给每种类型写一遍 `vector`**：
+
+```cpp
+class IntVector    { int    *data; ... };    // 装 int 的
+class FloatVector  { float  *data; ... };    // 装 float 的
+class StringVector { std::string *data; ... }; // 装 string 的
+// ... 无穷无尽
+```
+
+**用了模板，一个就够**：
+
+```cpp
+template <typename T>       // T 是"待定的类型"
+class Vector { T *data; ... };
+
+Vector<int>         a;      // 编译器自动生成"装 int 的 Vector"
+Vector<float>       b;      // 编译器自动生成"装 float 的 Vector"
+Vector<std::string> c;      // 编译器自动生成"装 string 的 Vector"
+```
+
+**模板的作用就是"把类型也变成参数"**——写一次，用的时候指定装什么。
+
+> [!important] 尖括号 `<>` 是模板的标志
+> `Vector<int>`、`std::vector<float>`、`dr->Read<uint64_t>(addr)` —— 尖括号里的就是**模板参数**。
+> 你以后会经常看到这种写法，读作"`std::vector` of `int`"、"`vector` 装 `int`"。
+
+### 从 `vector` 开始：能自动增长的数组
+
+**`std::vector` 是"动态数组"**——和数组一样是"一排同类型元素"，但：
+
+- 长度可以随时变（加元素、删元素）
+- 内部自动管理内存（不用手动 `malloc`/`free`）
+- 支持 `[]` 下标访问（和数组一样）
+
+**用法**：
+
+```cpp
+#include <vector>       // 用 vector 必须包含这个头文件
+
+std::vector<int> v;     // 创建一个空 vector，里面装 int
+```
+
+**加元素**：
+
+```cpp
+v.push_back(10);        // 在末尾加一个 10
+v.push_back(20);        // 现在 [10, 20]
+v.push_back(30);        // 现在 [10, 20, 30]
+```
+
+**看大小**：
+
+```cpp
+printf("%zu\n", v.size());     // 3
+printf("%d\n", v.empty());     // 0（false，表示不空）
+```
+
+**访问元素**（和数组一样）：
+
+```cpp
+v[0]              // 10
+v[1]              // 20
+v[2]              // 30
+```
+
+**遍历**（两种方式）：
+
+```cpp
+// 方式 1：传统下标
+for (size_t i = 0; i < v.size(); i++) {
+    printf("%d\n", v[i]);
+}
+
+// 方式 2：范围 for（C++11 起）
+for (int x : v) {
+    printf("%d\n", x);
+}
+```
+
+**`for (int x : v)`** 读作"对 `v` 里的每个元素 `x`，做……"。**这是 C++ 特有的遍历写法**，比下标更简洁。
+
+**清空 / 删除**：
+
+```cpp
+v.clear();        // 清空所有元素
+v.pop_back();     // 删掉最后一个
+```
+
+### `vector` vs 数组：什么时候用哪个
+
+| 场景 | 用什么 |
+|---|---|
+| **数量运行时才知道** | **`vector`** |
+| **数量编译期固定且很小** | 数组也行 |
+| **需要频繁随机访问** | 都行，`vector` 和数组都是 O(1) |
+| **需要频繁在中间插入/删除** | 都不是好选择（用 `list`，但现在先不管） |
+
+**现代 C++ 的惯例**：**默认用 `vector`**，只有特殊情况（极小的固定数组、性能敏感的栈上数组）才用裸数组。
+
+**本项目里 `vector` 到处都是**：网格数据、扫描区域、三角形列表、缓存……全部用 `vector`。
+
+### 动手：第一个 `vector` 程序
+
+```cpp
+#include <cstdio>
+#include <vector>
+
+int main() {
+    std::vector<int> v;
+
+    // 加 5 个元素
+    for (int i = 1; i <= 5; i++) {
+        v.push_back(i * 10);
+    }
+
+    printf("size = %zu\n", v.size());   // 5
+
+    // 遍历打印
+    for (int x : v) {
+        printf("%d ", x);
+    }
+    printf("\n");   // 10 20 30 40 50
+
+    // 用下标改
+    v[0] = 999;
+    printf("v[0] = %d\n", v[0]);   // 999
+
+    // 求和
+    int sum = 0;
+    for (int x : v) sum += x;
+    printf("sum = %d\n", sum);
+
+    return 0;
+}
+```
+
+编译：`g++ -std=c++20 -Wall vec_demo.cpp -o vec_demo.exe`
+
+**关键点**：
+
+- `#include <vector>` 才能用
+- 类型写 `std::vector<int>`——尖括号里指定元素类型
+- `push_back` 加元素，`size()` 看个数，`v[i]` 访问，范围 for 遍历
+- 不用管内存——`vector` 析构时自动释放（第 14 章会讲，这就是 RAII）
+
+## 现在回到"少写 20 个函数"的问题
+
+有了前面 `vector` 的铺垫，现在看第 04 章那个 `dr->Read<T>` 的动机就清楚了。
+
+不用模板，读取不同类型要写一堆：
+
+
 ## 先看一个让你少写 20 个函数的东西
 
 不用模板，读取不同类型要写一堆：
@@ -36,6 +228,21 @@ T Read(uint64_t address) {
     return value;
 }
 ```
+
+> [!note] 这段代码里的两个新语法
+> 上面那个 `Read` 函数用到了两个卷一还没讲的东西：
+>
+> **① `T value = {};` 和 `T{}`**：这是"**值初始化**"语法——用一对空花括号表示"**把这个类型初始化为默认值**"。
+> - 对 `int`，`int value = {}` 就是 `0`
+> - 对指针，就是 `nullptr`
+> - 对结构体，就是"所有字段都默认初始化"
+> 用法很简单：**想"清零/清空"一个任意类型的变量，就写 `= {}`**。
+>
+> **② 两个同名 `Read` 函数**：一个是 `int Read(uint64_t, void*, size_t)`（普通函数），另一个是 `T Read(uint64_t)`（模板）。
+> **C++ 允许"同名但参数不同"的多个函数共存**，这叫做**函数重载（overload）**——编译器根据你传的参数自动选哪个。
+> 调用 `dr.Read<int32_t>(addr)` 时匹配模板版，调用 `dr.Read(addr, buf, size)` 时匹配普通版。
+>
+> 这两个语法现在"知道有这回事"即可，后面的章节会自然地再遇到。
 
 用法：
 
@@ -104,6 +311,11 @@ struct TArray {
 };
 ```
 
+> [!note] `operator[]` 是"运算符重载"，先忽略
+> 上面那行 `T operator[](size_t u) const` 是 C++ 的**运算符重载**——它让 `TArray` 对象也能用 `[]` 下标访问（就像数组一样）。
+> **卷一不要求你掌握运算符重载**，这里出现只是因为它是本项目 `PhysX.h` 里的真实代码。
+> 你只要知道：**看到 `operator` 开头的函数，就是"重载了某个运算符"。** 用的时候照常用 `arr[i]` 就行。
+
 用法：
 
 ```cpp
@@ -125,6 +337,14 @@ TArray<PrunerPayload> payloads;  // 元素是自定义结构
 | `std::span<T>` | 数组只读/可写视图 | 传数组给函数 |
 | `std::optional<T>` | 可能有值可能没有 | 替代"用 -1 表示失败" |
 | `std::pair<A,B>` | 二元组 | 地址区间 |
+
+> [!note] `std::pair` 是什么
+> `std::pair<A, B>` 是**把两个值捆成一对**的简单容器——`first` 是第一个，`second` 是第二个。
+> ```cpp
+> std::pair<uintptr_t, uintptr_t> region = {0x1000, 0x2000};
+> printf("起: %llx 止: %llx\n", region.first, region.second);
+> ```
+> 本项目的"内存区间"就用它表示（起地址 + 止地址）。
 
 ### vector：用得最多的容器
 
@@ -157,7 +377,90 @@ meshes.push_back(m);      // 拷贝一份
 meshes.emplace_back(...); // 原地构造，少一次拷贝（推荐）
 ```
 
-### unordered_map：哈希表
+### 迭代器：遍历容器的"通用指针"
+
+在讲 `unordered_map` 之前，先补一个所有 STL 容器共有的概念：**迭代器（iterator）**。
+
+**迭代器 = 指向容器中某个元素的"指针"**。它可以 `++`（移到下一个），可以 `*`（取当前元素），可以比较。
+
+```cpp
+#include <vector>
+
+std::vector<int> v = {10, 20, 30};
+
+auto it = v.begin();     // it 指向第一个元素
+printf("%d\n", *it);    // 10
+
+++it;                    // 移到下一个
+printf("%d\n", *it);    // 20
+
+it = v.end();            // end() 指向"最后一个元素之后"
+```
+
+| 表达式 | 含义 |
+|---|---|
+| `v.begin()` | 指向第一个元素 |
+| `v.end()` | 指向**最后一个元素之后**（不是最后一个！） |
+| `*it` | 取迭代器当前指向的元素 |
+| `++it` / `it++` | 移到下一个 |
+| `it != v.end()` | "还没走到末尾" |
+
+**为什么 `end()` 指向"最后一个之后"**：这样用 `it != v.end()` 判断就能覆盖所有元素——当 `it` 越过最后一个时，正好等于 `end()`，循环退出。
+
+**标准的遍历写法**：
+
+```cpp
+for (auto it = v.begin(); it != v.end(); ++it) {
+    printf("%d\n", *it);
+}
+```
+
+**范围 for 就是它的语法糖**（第 13 章前面讲过）：
+
+```cpp
+for (int x : v) { printf("%d\n", x); }   // 内部就是上面那个循环
+```
+
+**什么时候必须用迭代器**：当容器**不支持下标访问**时（比如 `unordered_map`、`set`），或者需要"在遍历中删除元素"时。**普通的 `vector` 遍历优先用范围 for。**
+
+### unordered_map：哈希表（键值对）
+
+**哈希表**存的是"**键 → 值**"的映射——给一个键，立刻找到对应的值。
+
+```cpp
+#include <unordered_map>
+std::unordered_map<uint64_t, RTCGeometry> cache;   // 键是 uint64_t，值是 RTCGeometry
+
+cache[100] = geomA;         // 插入：键 100 → geomA
+cache[200] = geomB;         // 键 200 → geomB
+
+RTCGeometry g = cache[100]; // 查找：拿到 geomA
+```
+
+**`[...]` 访问时，键不存在会"自动创建"**——这点要注意：
+
+```cpp
+std::unordered_map<int, int> m;
+int x = m[5];       // 键 5 不存在 → 自动创建一个，值是 0，x = 0
+```
+
+**如果想"只在存在时才取"**，用 `find`（这就需要迭代器）：
+
+```cpp
+auto it = cache.find(shape);    // 返回迭代器
+if (it != cache.end()) {
+    // 找到了：it->first 是键，it->second 是值
+    use(it->second);
+} else {
+    // 没找到
+    cache[shape] = newGeom;     // 现在插入
+}
+```
+
+**`it->first` 和 `it->second`**：`unordered_map` 的每个元素是一个 `pair<键, 值>`，`.first` 是键，`.second` 是值。
+
+**本项目 `VisibleScene` 用 `unordered_map` 缓存 shape → geometry 的映射**——每次几何更新时，通过 shape 找对应的 Embree 几何 ID。
+
 
 ```cpp
 #include <unordered_map>
@@ -174,6 +477,59 @@ if (it != cache.end()) {
 
 本项目 `VisibleScene` 用 `unordered_map` 缓存 shape → geometry 的映射。
 
+### string：C++ 的字符串类型
+
+第 06 章讲过 C 的字符串——**以 `\0` 结尾的 `char` 数组**。它不好用：
+
+- 长度得自己记（或每次 `strlen` 算）
+- 复制要用 `strcpy`（还得自己保证目标够大）
+- 拼接要用 `strcat`（同样有溢出风险）
+
+**C++ 的 `std::string` 解决了这些问题**——它自动管理内存、能直接赋值、能拼接、自带长度：
+
+```cpp
+#include <string>
+
+std::string s = "hello";       // 直接赋值
+std::string t = s;             // 直接拷贝（自动分配内存）
+std::string u = s + " world";  // 直接拼接（+ 运算符）
+
+printf("%zu\n", s.size());    // 5（自带长度）
+```
+
+**常用操作**：
+
+| 操作 | 写法 | 说明 |
+|---|---|---|
+| 构造 | `std::string s = "abc";` | 从字符串字面量 |
+| 拷贝 | `std::string t = s;` | 深拷贝，独立 |
+| 拼接 | `s + "x"` 或 `s += "x"` | 自动扩容 |
+| 长度 | `s.size()` / `s.length()` | 元素个数 |
+| 判空 | `s.empty()` | 比 `s.size() == 0` 更清楚 |
+| 取字符 | `s[i]` | 第 i 个字符 |
+| 转 C 字符串 | `s.c_str()` | 得到 `const char*`，可给 `printf` 用 |
+| 查找 | `s.find("x")` | 返回位置，找不到返回 `std::string::npos` |
+
+```cpp
+std::string name = "Player";
+name += "_01";                          // "Player_01"
+if (name.find("Player") != std::string::npos) {
+    printf("找到了\n");
+}
+printf("%s\n", name.c_str());           // 传给 printf 要 .c_str()
+```
+
+> [!important] 为什么 `printf` 要写 `.c_str()`
+> `printf` 的 `%s` 要的是"以 `\0` 结尾的 `char*`"，而 `std::string` 是"对象"。
+> `.c_str()` 就是"取出内部那个 `const char*`"。
+> 如果直接用 `printf("%s", name)` 会出错——**必须 `.c_str()`**。
+> （用 C++ 的 `std::cout << name` 则不需要，但本项目主要用 `printf`。）
+
+> [!note] `std::string` vs `std::string_view`
+> - `std::string`：**拥有**字符数据（自己管内存），可修改
+> - `std::string_view`：**不拥有**数据（只是"看"一段已有的字符串），只读、零拷贝
+> 传参数时用 `string_view`（省一次拷贝），存数据时用 `string`。**下一个节详讲。**
+
 ### string_view：零拷贝字符串参数
 
 ```cpp
@@ -184,6 +540,29 @@ foo("libUE4.so");
 // 好：string_view 只是 {指针, 长度}，不分配
 void foo(std::string_view name);
 ```
+
+`string_view` 常用方法（和 `string` 类似）：
+
+| 方法 | 作用 |
+|---|---|
+| `.size()` / `.length()` | 长度（字符数） |
+| `.empty()` | 是否为空 |
+| `.data()` | 首字符指针（**不保证以 \0 结尾**） |
+| `[i]` | 第 i 个字符 |
+
+```cpp
+std::string_view sv = "hello";
+printf("len=%zu\n", sv.size());      // 5
+if (sv.empty()) { /* 空串 */ }
+printf("首字符=%c\n", sv[0]);          // h
+```
+
+> [!warning] `string_view` 没有 `c_str()`
+> 它**不保证以 `\0` 结尾**，所以**不能直接传给 `printf("%s")`**。
+> 打印它要用 `%.*s` 指定长度（第 16 章会讲）：
+> ```cpp
+> printf("%.*s", (int)sv.size(), sv.data());
+> ```
 
 本项目的接口全部用 `string_view`：
 
@@ -334,6 +713,8 @@ int main(void) {
 
     FakeDriver dr;
     printf("int32  = %d\n", dr.Read<int32_t>(0x100));
+    // value_or：optional 有值就返回它，没值就返回括号里的默认值
+    // c_str()：把 std::string 转成 C 风格的 const char*，好给 printf 用
     printf("string = %s\n", dr.ReadString(0x200).value_or("<null>").c_str());
 
     auto arr = dr.ReadArray<uint64_t>(0x300, 5);
