@@ -97,9 +97,18 @@ typedef VkResult (VKAPI_PTR *PFN_vkCreateInstance)(
     VkInstance*                  pInstance);
 ```
 
-前提：定义 `VK_NO_PROTOTYPES`（或 ImGui 的
-`IMGUI_IMPL_VULKAN_NO_PROTOTYPES`），
-这样头文件**只声明类型，不声明函数**。
+前提：定义 `IMGUI_IMPL_VULKAN_NO_PROTOTYPES`（本项目用的）
+或 `VK_NO_PROTOTYPES`，这样头文件**只声明类型，不声明函数**。
+
+> [!note] 两个宏的关系
+> 本项目只加 `IMGUI_IMPL_VULKAN_NO_PROTOTYPES` 就够了——
+> `imgui_impl_vulkan.h` 内部会自动帮你定义 `VK_NO_PROTOTYPES`：
+> ```cpp
+> #if defined(IMGUI_IMPL_VULKAN_NO_PROTOTYPES) && !defined(VK_NO_PROTOTYPES)
+> #define VK_NO_PROTOTYPES
+> #endif
+> ```
+> 所以你不用两个都写。
 
 本项目的 `Android.mk`：
 
@@ -320,7 +329,7 @@ int main(void) {
 | 问题 | 原因 | 解法 |
 |---|---|---|
 | `dlsym` 返回 null | 符号名拼错 / 该版本没有 | 打印 `dlerror()` |
-| 编译报"未定义引用 vkCreateInstance" | 没定义 `VK_NO_PROTOTYPES` | 加宏 |
+| 编译报"未定义引用 vkCreateInstance" | 没定义 `IMGUI_IMPL_VULKAN_NO_PROTOTYPES` | 在 `Android.mk` 加 `-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES`（它会自动带上 `VK_NO_PROTOTYPES`） |
 | 调用崩 | 函数指针为 null | 调用前判空 |
 | Android 7+ 找不到 libvulkan.so | 私有库限制（App 场景） | 原生可执行文件不受限（第 32 章） |
 | 只加载了核心函数，扩展函数崩 | 扩展要用 `vkGetXxxProcAddr` | 分两类加载 |

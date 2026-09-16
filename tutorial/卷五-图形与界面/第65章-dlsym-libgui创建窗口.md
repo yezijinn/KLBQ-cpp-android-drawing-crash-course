@@ -186,14 +186,18 @@ public:
         libgui = dlopen("libgui.so", RTLD_NOW);
         if (!libgui) return false;
 
-        // 构造 SurfaceComposerClient
-        pfnSCC_ctor = (PFN_SCC_ctor)dlsym(libgui, "_ZN7android21SurfaceComposerClientC1Ev");
-        pfnSCC_initCheck = (PFN_initCheck)dlsym(libgui,
-            "_ZNK7android21SurfaceComposerClient9initCheckEv");
+        // 构造 SurfaceComposerClient（真实项目用 C2 构造，部分版本是 C1）
+        pfnSCC_ctor = (PFN_SCC_ctor)dlsym(libgui, "_ZN7android21SurfaceComposerClientC2Ev");
+        if (!pfnSCC_ctor)
+            pfnSCC_ctor = (PFN_SCC_ctor)dlsym(libgui, "_ZN7android21SurfaceComposerClientC1Ev");
+        // createSurface：符号随版本变（完整表见第 66 章），这里以 Android 14-16 为例
         pfnSCC_createSurface = (PFN_createSurface)dlsym(libgui,
-            "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjijPNS_2spINS_7IBinderEEENS_13LayerMetadataE");
+            "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjiiRKNS_2spINS_7IBinderEEENS_3gui13LayerMetadataEPj");
         pfnSC_getSurface = (PFN_getSurface)dlsym(libgui,
             "_ZNK7android14SurfaceControl10getSurfaceEv");
+        if (!pfnSC_getSurface)
+            pfnSC_getSurface = (PFN_getSurface)dlsym(libgui,
+                "_ZN7android14SurfaceControl10getSurfaceEv");
         // ... 更多
         return pfnSCC_ctor && pfnSCC_createSurface;
     }
@@ -284,13 +288,13 @@ int main(void) {
     if (!lib) { printf("dlopen: %s\n", dlerror()); return 1; }
     printf("libgui.so 加载成功\n");
 
-    // 尝试几个已知符号（不同 Android 版本）
+    // 尝试几个已知符号（真实项目 ANativeWindowCreator.h 里用的）
     const char *candidates[] = {
-        "_ZN7android21SurfaceComposerClientC1Ev",           // 构造函数
-        "_ZN7android21SurfaceComposerClientC1ENS_2spINS_7ISurfaceComposerEEE",
-        "_ZNK7android21SurfaceComposerClient9initCheckEv",  // initCheck
-        "_ZNK7android14SurfaceControl10getSurfaceEv",       // getSurface
-        "_ZN7android12LayerMetadataC1Ev",                   // LayerMetadata
+        "_ZN7android21SurfaceComposerClientC2Ev",           // 构造函数（项目用 C2）
+        "_ZN7android21SurfaceComposerClientC1Ev",           // 构造函数（另一种，部分版本）
+        "_ZNK7android14SurfaceControl10getSurfaceEv",       // getSurface（const 版）
+        "_ZN7android14SurfaceControl10getSurfaceEv",        // getSurface（非 const 版）
+        "_ZN7android13LayerMetadata8setInt32Eji",           // LayerMetadata::setInt32
         nullptr
     };
 

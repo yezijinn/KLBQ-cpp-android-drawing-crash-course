@@ -91,66 +91,79 @@ ImGui 的坐标是屏幕像素（0,0 在左上），
 需要变换到 NDC（-1..1，y 向上）：
 
 ```cpp
-float L = draw_data->DisplayPos.x;
-float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
-float T = draw_data->DisplayPos.y;
-float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
-
-float mvp[4][4] = {
-    { 2.0f/(R-L),   0.0f,          0.0f, 0.0f },
-    { 0.0f,         2.0f/(T-B),    0.0f, 0.0f },
-    { 0.0f,         0.0f,          0.5f, 0.0f },
-    { (R+L)/(L-R),  (T+B)/(B-T),   0.5f, 1.0f },
-};
+// 真实源码 imgui_impl_vulkan.cpp：Setup scale and translation
+float constants[4];
+constants[0] = 2.0f / draw_data->DisplaySize.x; // Scale X
+constants[1] = 2.0f / draw_data->DisplaySize.y; // Scale Y
+constants[2] = -1.0f - draw_data->DisplayPos.x * constants[0]; // Translate X
+constants[3] = -1.0f - draw_data->DisplayPos.y * constants[1]; // Translate Y
 
 // 通过 push constant 传给顶点着色器
-vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-                   sizeof(float)*0, sizeof(mvp), mvp);
+vkCmdPushConstants(command_buffer, bd->PipelineLayout,
+                   VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4, constants);
 ```
 
 逐项验证：
 
 | 元素 | 作用 |
 |---|---|
-| `2/(R-L)` | x: `[L,R]` → `[-1,1]` |
-| `2/(T-B)` | y: `[T,B]` → `[-1,1]`（注意 T < B，所以是负分母，实现翻转） |
-| `(R+L)/(L-R)` | x 平移 |
-| `(T+B)/(B-T)` | y 平移 |
+| `2 / DisplaySize.x` | x: `[0, 屏宽]` → `[-1,1]`（缩放） |
+| `2 / DisplaySize.y` | y: `[0, 屏高]` → `[-1,1]`（缩放；因为屏幕 y 向下、NDC y 向上，这一步同时完成了翻转） |
+| `-1 - DisplayPos.x * scaleX` | x 平移（把缩放后的范围挪到 `[-1,1]`） |
+| `-1 - DisplayPos.y * scaleY` | y 平移 |
+
+**本项目用 4 个 float，不是 4×4 矩阵**——原因见第 57 章：ImGui 只有正交投影，没有旋转/透视，
+压缩成两个 `vec2`（scale + translate）即可。顶点着色器里就是 `aPos * uScale + uTranslate`。
 
 ## 步骤 ⑤：遍历命令绘制
 
 ```cpp
+// 真实源码 imgui_impl_vulkan.cpp（简化为单视口，clip_scale 一般为 1）
 ImVec2 clip_off = draw_data->DisplayPos;
-int vtx_offset = 0, idx_offset = 0;
+int global_vtx_offset = 0, global_idx_offset = 0;
 
 for (int n = 0; n < draw_data->CmdListsCount; n++) {
-    const ImDrawList *cmd_list = draw_data->CmdLists[n];
+    const ImDrawList *draw_list = draw_data->CmdLists[n];
 
-    for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
-        const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[cmd_i];
+    for (int cmd_i = 0; cmd_i < draw_list->CmdBuffer.Size; cmd_i++) {
+        const ImDrawCmd *pcmd = &draw_list->CmdBuffer[cmd_i];
+        if (pcmd->UserCallback != nullptr) { /* 用户回调，略 */ continue; }
 
-        // a. 设置裁剪矩形
+        // a. 设置裁剪矩形（投影到 framebuffer 空间 + 夹取到视口内）
+        ImVec2 clip_min(pcmd->ClipRect.x - clip_off.x, pcmd->ClipRect.y - clip_off.y);
+        ImVec2 clip_max(pcmd->ClipRect.z - clip_off.x, pcmd->ClipRect.w - clip_off.y);
+        if (clip_min.x < 0.0f) clip_min.x = 0.0f;
+        if (clip_min.y < 0.0f) clip_min.y = 0.0f;
+        if (clip_max.x > (float)fb_width)  clip_max.x = (float)fb_width;
+        if (clip_max.y > (float)fb_height) clip_max.y = (float)fb_height;
+        if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y) continue;
+
         VkRect2D scissor;
-        scissor.offset.x = (int32_t)(pcmd->ClipRect.x - clip_off.x);
-        scissor.offset.y = (int32_t)(pcmd->ClipRect.y - clip_off.y);
-        scissor.extent.width  = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);
-        scissor.extent.height = (uint32_t)(pcmd->ClipRect.w - pcmd->ClipRect.y);
-        vkCmdSetScissor(cmd, 0, 1, &scissor);
+        scissor.offset.x = (int32_t)(clip_min.x);
+        scissor.offset.y = (int32_t)(clip_min.y);
+        scissor.extent.width  = (uint32_t)(clip_max.x - clip_min.x);
+        scissor.extent.height = (uint32_t)(clip_max.y - clip_min.y);
+        vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-        // b. 绑定纹理（字体图集）
-        VkDescriptorSet desc = (VkDescriptorSet)pcmd->TextureId;
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout, 0, 1, &desc, 0, nullptr);
+        // b. 绑定纹理描述符（字体图集或用户纹理）
+        VkDescriptorSet image_view = (VkDescriptorSet)pcmd->GetTexID();
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipelineLayout, 0, 1, &image_view, 0, nullptr);
 
         // c. 绘制！
-        vkCmdDrawIndexed(cmd, pcmd->ElemCount, 1,
-                         pcmd->IdxOffset + idx_offset,
-                         pcmd->VtxOffset + vtx_offset, 0);
+        vkCmdDrawIndexed(command_buffer, pcmd->ElemCount, 1,
+                         pcmd->IdxOffset + global_idx_offset,
+                         pcmd->VtxOffset + global_vtx_offset, 0);
     }
-    idx_offset += cmd_list->IdxBuffer.Size;
-    vtx_offset += cmd_list->VtxBuffer.Size;
+    global_idx_offset += draw_list->IdxBuffer.Size;
+    global_vtx_offset += draw_list->VtxBuffer.Size;
 }
 ```
+
+> [!note] 几个和真实源码对齐的细节
+> - `pcmd->GetTexID()`：新版 ImGui 用这个方法取纹理（不是老版的 `TextureId` 字段）。
+> - **裁剪矩形要先夹取到视口内**：`vkCmdSetScissor` 不接受超出边界的值，否则校验层报错。
+> - `global_vtx_offset / global_idx_offset`：多个 CmdList 共用一个大缓冲，所以要累积（见下方要点）。
 
 三个要点：
 - **裁剪矩形**用 scissor（硬件裁剪，不消耗性能）
@@ -166,8 +179,8 @@ layout(location = 1) in vec2 aUV;
 layout(location = 2) in vec4 aColor;
 
 layout(push_constant) uniform uPushConstant {
-    vec4 uScale;
-    vec4 uTranslate;
+    vec2 uScale;        // ← 真实源码用的是 vec2（不是 vec4）
+    vec2 uTranslate;
 } pc;
 
 layout(location = 0) out vec2 vUV;
@@ -176,12 +189,14 @@ layout(location = 1) out vec4 vColor;
 void main() {
     vUV = aUV;
     vColor = aColor;
-    gl_Position = vec4(aPos * pc.uScale.xy + pc.uTranslate.xy, 0.0, 1.0);
+    gl_Position = vec4(aPos * pc.uScale + pc.uTranslate, 0, 1);
 }
 ```
 
-注意：这里把 4×4 矩阵简化成了两个 `vec4`（scale + translate），
+注意：这里把正交投影简化成了两个 `vec2`（scale + translate），
 因为 ImGui 只需要正交投影，不需要完整的 MVP。
+（真实源码 `imgui_impl_vulkan.cpp` 的 push constant 就是 `vec2 uScale; vec2 uTranslate;`，
+共 4 个 float，与上面 C++ 侧的 `constants[4]` 一一对应。）
 
 ## 片元着色器
 
@@ -276,9 +291,12 @@ struct CPUBackend {
             for (int ci = 0; ci < l->CmdBuffer.Size; ci++) {
                 const ImDrawCmd &c = l->CmdBuffer[ci];
                 for (unsigned int i = 0; i + 2 < c.ElemCount; i += 3) {
-                    auto v0 = l->VtxBuffer[l->IdxBuffer[c.IdxOffset + i + 0]];
-                    auto v1 = l->VtxBuffer[l->IdxBuffer[c.IdxOffset + i + 1]];
-                    auto v2 = l->VtxBuffer[l->IdxBuffer[c.IdxOffset + i + 2]];
+                    // 索引值是"相对 VtxOffset"的，所以取顶点时要加上 c.VtxOffset
+                    // （当单个 DrawList 超过 64K 顶点时，ImGui 会拆成多个命令，VtxOffset 才非 0；
+                    //   真实 GPU 后端也是这么处理的：pcmd->VtxOffset + global_vtx_offset）
+                    auto v0 = l->VtxBuffer[c.VtxOffset + l->IdxBuffer[c.IdxOffset + i + 0]];
+                    auto v1 = l->VtxBuffer[c.VtxOffset + l->IdxBuffer[c.IdxOffset + i + 1]];
+                    auto v2 = l->VtxBuffer[c.VtxOffset + l->IdxBuffer[c.IdxOffset + i + 2]];
                     DrawTriangle(v0, v1, v2, nullptr, 0);
                 }
             }

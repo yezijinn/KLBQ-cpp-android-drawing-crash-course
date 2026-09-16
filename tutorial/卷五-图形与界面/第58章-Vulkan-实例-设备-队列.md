@@ -221,7 +221,7 @@ vkCreateDescriptorPool(device, &descInfo, nullptr, &descriptorPool);
 
 ## 本项目的封装
 
-`VulkanGraphics.h` 里的成员：
+`VulkanGraphics.h` 里的成员（**照抄项目源码**）：
 
 ```cpp
 class VulkanGraphics : public AndroidImgui {
@@ -232,12 +232,16 @@ private:
     VkDevice            m_Device         = VK_NULL_HANDLE;
     uint32_t            m_QueueFamily    = (uint32_t)-1;
     VkQueue             m_Queue          = VK_NULL_HANDLE;
+    VkDebugReportCallbackEXT m_DebugReport = VK_NULL_HANDLE;   // 调试回调
     VkPipelineCache     m_PipelineCache  = VK_NULL_HANDLE;
     VkDescriptorPool    m_DescriptorPool = VK_NULL_HANDLE;
 
     std::unique_ptr<ImGui_ImplVulkanH_Window> wd{};
     int m_MinImageCount = 2;
     bool m_SwapChainRebuild = false;
+
+    int m_LastWidth = 0;      // 用于检测尺寸变化、重建交换链
+    int m_LastHeight = 0;
 };
 ```
 
