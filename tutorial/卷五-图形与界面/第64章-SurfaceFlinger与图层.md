@@ -140,13 +140,17 @@ using namespace android;
 sp<SurfaceComposerClient> client = new SurfaceComposerClient();
 if (client->initCheck() != NO_ERROR) { /* 失败 */ }
 
-// 2. 创建图层
+// 2. 创建图层（真实项目 ANativeWindowCreator.h 的调用形态）
+//    第 5 个参数是"像素格式"，项目里写的是整数 1（= RGBA_8888）
+int32_t pixelFormat = 1;   // RGBA_8888
 sp<SurfaceControl> sc = client->createSurface(
     String8("MyOverlay"),      // 名字
     1080, 2400,                // 宽高
-    PIXEL_FORMAT_RGBA_8888,    // 像素格式
-    ISurfaceComposerClient::eFXSurfaceBufferState,  // 类型
-    nullptr);                  // parent（nullptr = 顶层）
+    pixelFormat,               // 像素格式（1 = RGBA_8888）
+    0,                         // windowFlags（skipScreenshot 时 |= 0x40）
+    nullptr,                   // parent（nullptr = 顶层）
+    LayerMetadata{},           // 元数据（Android 10+）
+    nullptr);                  // outTransformHint
 
 // 3. 配置图层
 SurfaceComposerClient::Transaction t;
@@ -159,6 +163,11 @@ t.apply();                                 // 原子提交
 // 4. 拿到 ANativeWindow 来绘制
 ANativeWindow *window = sc->getSurface().get();
 ```
+
+> [!note] 参数个数/类型随版本变
+> 上面的形态接近 Android 11+。**不同版本参数不同**（这就是第 66 章那张版本表要解决的问题）。
+> 项目把"像素格式"写成整数 `1`（= RGBA_8888），而不是 `PIXEL_FORMAT_RGBA_8888` 常量名——
+> 因为枚举值就是 1，直接写数字更省事（也规避了头文件缺失的问题）。
 
 > [!warning] 这不是 NDK 公开 API
 > `libgui.so` 是系统私有库：
