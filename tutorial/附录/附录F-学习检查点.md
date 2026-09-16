@@ -183,11 +183,15 @@ aliases: [附录F, checkpoint]
 > [!question]- 答案
 > `chmod 755`（push 的文件默认是 644，没有执行权限）。
 
-**Q26.** `compositeAlpha` 设错会导致什么？
+**Q26.** 本项目覆盖层的透明靠什么实现？
 
 > [!question]- 答案
-> 如果用了 `VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR`，
-> 悬浮窗会是不透明的黑块。必须用 `POST_MULTIPLIED` 或 `INHERIT` 才能透明。
+> 靠两件事：① 图层像素格式是 `RGBA_8888`（带 alpha 通道）；
+> ② 每帧清屏色的 alpha = 0。
+> **不靠 `compositeAlpha`**——本项目用 ImGui helper 建交换链，
+> `compositeAlpha` 取 `OPAQUE`/`INHERIT`（第 59、62 章）。
+>
+> 若黑底，先查图层格式和清屏 alpha，别急着改 `compositeAlpha`。
 
 **Q27.** `FontDataOwnedByAtlas = false` 为什么必需？
 

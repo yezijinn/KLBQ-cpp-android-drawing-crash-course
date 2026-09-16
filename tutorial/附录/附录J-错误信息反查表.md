@@ -209,7 +209,7 @@ hexdump((void*)addr, 32);
 | `VK_ERROR_DEVICE_LOST` | GPU 挂了 | 检查命令缓冲录制逻辑 | 深挖E |
 | 验证层报 `sType is invalid` | 结构体没填 `sType` | 每个 CreateInfo 都要填 | 58、深挖E |
 | 验证层报 `was not destroyed` | 资源泄漏 | 检查清理函数 | 58 |
-| 悬浮窗黑底 | `compositeAlpha` 用了 OPAQUE | 改 `POST_MULTIPLIED` | 59 |
+| 悬浮窗黑底 | 图层格式非 RGBA_8888，或清屏色 alpha≠0 | 查图层格式 + `ClearValue` | 59 |
 | 画面撕裂 | 呈现模式不对 | 用 `FIFO` | 59 |
 | 旋转屏幕后错位 | 没重建交换链 | 检测尺寸变化 | 59 |
 | 渲染卡住不退出 | 同步对象用错 | 检查信号量配对 | 深挖E |

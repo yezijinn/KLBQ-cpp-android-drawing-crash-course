@@ -146,17 +146,20 @@ adb shell ls -l /dev/uinput
 
 ### Q14：为什么我的悬浮窗有黑底？
 
-九成是 `compositeAlpha` 用了 `OPAQUE`。
+**九成是图层格式或清屏色的问题，不是 `compositeAlpha`。** 检查两点：
+
+1. **图层像素格式**是 `RGBA_8888`（带 alpha）吗？`dumpsys SurfaceFlinger` 可查。
+2. **每帧清屏色的 alpha** 是 0 吗？检查渲染通道的 `ClearValue`。
 
 ```cpp
-// 检查这一行
-VkCompositeAlphaFlagBitsKHR alphaMode = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;  // ✗
-
-// 改成
-alphaMode = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;   // ✓
+// 真实源码 VulkanGraphics.cpp：ClearValue 默认全 0，清屏即全透明
+clearValue.color = {{0.0f, 0.0f, 0.0f, 0.0f}};    // ★ alpha = 0
 ```
 
-如果设备不支持 `POST_MULTIPLIED`，试 `INHERIT`（第 59 章的能力查询）。
+> [!warning] 本项目**不用** `POST_MULTIPLIED`
+> 网上教程常说"透明要设 `POST_MULTIPLIED`"，但本项目走的是
+> "图层 RGBA + 清屏 alpha=0"这条路。ImGui helper 建交换链时
+> `compositeAlpha` 取 `OPAQUE`/`INHERIT` 即可（第 59 章）。
 
 ### Q15：为什么菜单点不到？
 

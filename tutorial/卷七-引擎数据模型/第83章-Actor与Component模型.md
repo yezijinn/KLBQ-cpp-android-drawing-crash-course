@@ -116,6 +116,18 @@ struct CharacterComponent {
     uint32_t teamId;
     bool     isAI;
 };
+
+// 骨骼变换：一根骨骼的旋转 + 位置 + 缩放
+struct BoneTransform {
+    Quat rotation;            // 16 字节
+    Vec3 translation;         // 12 字节
+    Vec3 scale;               // 12 字节
+};                            // 合计 40 字节
+
+// ★ 关键：引擎按 48 字节步长存骨骼，不是 sizeof(BoneTransform)=40
+// 多出的 8 字节是填充（对齐到 16，支持 SIMD），详见第 07、86 章
+#define BONE_STRIDE 48
+#define BONE_COUNT  56
 ```
 
 ## Actor 结构
@@ -214,8 +226,10 @@ Actor* SpawnActor(const char *name, Vec3 loc, bool isCharacter) {
     if (isCharacter) {
         auto *m = new MeshComponent();
         m->header = {COMP_MESH, sizeof(MeshComponent), 0};
-        m->boneArray = (uint64_t)malloc(56 * sizeof(struct BoneTransform));
-        m->boneCount = 56;
+        // ★ 按 BONE_STRIDE(48) 分配，不是 sizeof(BoneTransform)(40)
+        // 用 sizeof 会少分配 56*8=448 字节，读第 55 根骨骼时越界（第 86 章）
+        m->boneArray = (uint64_t)malloc(BONE_COUNT * BONE_STRIDE);   // 56 × 48 = 2688 字节
+        m->boneCount = BONE_COUNT;
         m->capsuleRadius = 34.0f;
         m->capsuleHalfHeight = 88.0f;
         AttachComponent(a, (ComponentHeader*)m);

@@ -245,7 +245,7 @@ aliases: [附录O, topicindex]
 | 200 | 跳过截屏三种方式 | 67 | — | `过录制` |
 | 201 | 多层镜像 | 68 | — | `ProcessMirrorDisplay` |
 | 202 | `dumpsys display` 解析 | 68 | — | — |
-| 203 | Vulkan 混合与预乘 Alpha | 附E | 深挖E | `POST_MULTIPLIED` |
+| 203 | Vulkan 混合与预乘 Alpha | 附E | 深挖E | `POST_MULTIPLIED`（**项目未用**，见第 59 章） |
 | 204 | ImGui ID 冲突 | 附E | — | `PushID` |
 | 205 | ImGui 窗口跑出屏幕 | 附E | — | `std::clamp` 复位 |
 | 206 | `stb_image` 与纹理加载 | 附L | — | `LoadTextureFromFile` |

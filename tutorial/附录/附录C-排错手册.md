@@ -106,8 +106,16 @@ adb shell settings put system pointer_location 1   # 开指针位置看
 ## 图形渲染类
 
 ### 17. 悬浮窗有黑底
-**原因**：`compositeAlpha` 用了 `OPAQUE`
-**解法**：改用 `VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR`（第 59 章）
+**原因**（按概率）：图层像素格式不是 `RGBA_8888`；或每帧清屏色的 alpha 不是 0。
+**解法**：
+1. `dumpsys SurfaceFlinger` 确认图层格式是 `RGBA_8888`
+2. 检查渲染通道 `ClearValue.color.float32[3] == 0`
+
+> [!warning] 本项目**不用** `POST_MULTIPLIED`
+> 网上很多教程说"透明要设 `POST_MULTIPLIED`"，但**本项目不是这条路**。
+> 本项目用 ImGui helper 建交换链，`compositeAlpha` 取 `OPAQUE`/`INHERIT`；
+> 透明来自"图层 RGBA_8888 + 每帧 alpha=0 清屏"（第 59、62 章）。
+> **照抄 `POST_MULTIPLIED` 会和项目实际代码不符。**
 
 ### 18. 菜单能画但触摸没反应
 **原因**：图层不接收输入；或触摸没喂给 ImGui

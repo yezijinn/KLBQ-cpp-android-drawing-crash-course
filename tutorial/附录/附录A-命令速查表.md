@@ -238,7 +238,7 @@ ls /system/lib64/libvulkan.so
 | `VK_KHR_SURFACE_EXTENSION_NAME` | 实例扩展（必需） |
 | `VK_KHR_ANDROID_SURFACE_EXTENSION_NAME` | 实例扩展（必需） |
 | `VK_KHR_SWAPCHAIN_EXTENSION_NAME` | 设备扩展（必需） |
-| `VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR` | 透明合成 ★ |
+| `VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR` | 合成方式之一（本项目**未用**，透明靠 RGBA 图层 + 清屏 alpha=0） |
 | `VK_PRESENT_MODE_FIFO_KHR` | 垂直同步（一定支持） |
 | `VK_PRESENT_MODE_MAILBOX_KHR` | 低延迟 |
 | `RTC_INVALID_GEOMETRY_ID` | Embree 未命中标记 |
