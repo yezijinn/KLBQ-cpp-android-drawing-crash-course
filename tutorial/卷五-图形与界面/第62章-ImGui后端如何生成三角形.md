@@ -117,6 +117,13 @@ vkCmdPushConstants(command_buffer, bd->PipelineLayout,
 
 ## 步骤 ⑤：遍历命令绘制
 
+> [!note] 先认识 "scissor"（裁剪矩形）
+> 绘制时你可能只想让画面出现在屏幕的某个矩形区域内，别的地方不画。
+> Vulkan 提供了 **scissor**：**设一个矩形，只有落在矩形内的像素才会被写入**。
+> 它是**硬件层面**的裁剪，几乎不耗性能（比在着色器里手动判断快得多）。
+> 下面代码里，每条绘制命令都先用 `vkCmdSetScissor` 设好 scissor，再发起绘制——
+> 这就对应第 57 章说的"ImGui 的每个命令带一个裁剪矩形"。
+
 ```cpp
 // 真实源码 imgui_impl_vulkan.cpp（简化为单视口，clip_scale 一般为 1）
 ImVec2 clip_off = draw_data->DisplayPos;
