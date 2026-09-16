@@ -447,8 +447,12 @@ blend.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;      // 已经乘过了
 blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 ```
 
-**本项目用 `VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR`**——
-名字里的 "POST_MULTIPLIED" 就是指预乘。
+> [!note] 本项目实际没有设 `POST_MULTIPLIED`
+> 这里讲"预乘 Alpha 是什么"是**通用知识**（理解混合公式用）。
+> 但**本项目覆盖层的透明，不靠 `POST_MULTIPLIED`**：
+> 它用 ImGui helper 建交换链（`compositeAlpha` 选 OPAQUE/INHERIT），
+> 透明来自"图层 RGBA_8888 + 每帧 alpha=0 清屏"（第 59 章）。
+> 别把"预乘概念"和"本项目实现"混为一谈。
 
 ### Q15：两个半透明物体叠加，颜色不对？
 
@@ -509,7 +513,7 @@ MAILBOX 不等待垂直同步，会尽快提交新帧——
 
 | 排名 | 问题 | 症状 | 定位方法 |
 |---|---|---|---|
-| 1 | `compositeAlpha` 用 OPAQUE | 黑底 | 查代码里那一行 |
+| 1 | 图层像素格式不是 RGBA_8888 / 清屏色 alpha≠0 | 黑底 | 查图层格式 + ClearValue |
 | 2 | `sType` 漏填 | 创建失败/崩溃 | 验证层会指出 |
 | 3 | 符号名版本不匹配 | `dlsym` 返回 null | 符号侦察器 |
 
@@ -525,6 +529,6 @@ MAILBOX 不等待垂直同步，会尽快提交新帧——
 > ```
 > 出问题时先切到这个模式——
 > 如果能看到半透明色，说明渲染链路是通的，问题在绘制内容；
-> 如果还是黑块，说明是交换链/合成的问题。**能省很多时间。**
+> 如果还是黑块，说明是图层格式/清屏色的问题（注意：不是 compositeAlpha）。**能省很多时间。**
 
 → 返回 [[卷五-本卷导航]]
