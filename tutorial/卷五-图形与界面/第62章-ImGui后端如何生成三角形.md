@@ -245,6 +245,7 @@ struct CPUBackend {
     }
 
     // 画一个三角形（重心坐标 + 简单填充）
+    // 重心坐标原理见第 57 章"光栅化"那节的补注
     void DrawTriangle(const ImDrawVert& v0, const ImDrawVert& v1,
                       const ImDrawVert& v2, uint32_t *tex, int texW) {
         float minX = fminf(v0.pos.x, fminf(v1.pos.x, v2.pos.x));
