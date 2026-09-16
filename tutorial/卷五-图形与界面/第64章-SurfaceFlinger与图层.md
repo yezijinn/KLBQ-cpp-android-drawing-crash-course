@@ -218,7 +218,7 @@ PIXEL_FORMAT_RGB_565       // 16 位，省内存
 ```
 
 **覆盖层必须用带 alpha 的格式**（RGBA_8888），
-配合 Vulkan 的 `compositeAlpha = POST_MULTIPLIED`，
+配合每帧用 alpha=0 清屏（第 62 章），
 没画的地方就是透明的。
 
 ## 用 dumpsys 观察图层

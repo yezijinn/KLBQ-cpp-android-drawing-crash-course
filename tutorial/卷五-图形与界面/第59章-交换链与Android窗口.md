@@ -110,21 +110,36 @@ printf("最大尺寸: %ux%u\n", caps.maxImageExtent.width, caps.maxImageExtent.h
 | `supportedTransforms` | 支持的旋转 |
 | `supportedCompositeAlpha` | **支持的透明合成方式** ★ |
 
-**`supportedCompositeAlpha` 对覆盖层至关重要**：
+**`supportedCompositeAlpha`** 决定"交换链的 alpha 怎么和合成器配合"。
+
+本项目**没有自己选这个值**，而是直接调用 ImGui 的 helper
+`ImGui_ImplVulkanH_CreateOrResizeWindow`，由它按支持情况选（**照抄项目实际行为**）：
 
 ```cpp
-VkCompositeAlphaFlagBitsKHR alphaMode = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-// 想要透明，需要检查：
-if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR)
-    alphaMode = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;   // ★
-else if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR)
-    alphaMode = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+// 真实源码 imgui_impl_vulkan.cpp（helper 内部）
+if (cap.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
+    info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+else if (cap.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR)
+    info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+else
+    IM_ASSERT(false && "No supported composite alpha mode found!");
 ```
 
-> [!warning] 不设对就是你那个"黑色背景"问题的根源
-> 如果用了 `OPAQUE`，你的悬浮窗会是不透明的黑块。
-> 本项目需要"除了画的线以外全透明"，必须用
-> `VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR`（或 INHERIT）。
+> [!important] 本项目覆盖层的透明，靠的是**另外两件事**，不是 compositeAlpha
+> 很多人以为"透明必须设 POST_MULTIPLIED"，但**本项目实际用的是 OPAQUE 或 INHERIT**。
+> 覆盖层的透明来自：
+> 1. **图层像素格式是 `RGBA_8888`**（第 64 章 `ANativeWindowCreator` 里设的），带 alpha 通道；
+> 2. **每帧用 alpha=0 清屏**（见第 62 章），没画到的地方 alpha 就是 0。
+>
+> 项目源码注释写得很直白（`VulkanGraphics.cpp`）：
+> ```cpp
+> //透明 默认已经是0了
+> //memset(wd->ClearValue.color.float32, 0, sizeof(wd->ClearValue.color.float32));
+> ```
+> `ClearValue` 默认全 0，所以清屏就是全透明——**不用额外设 compositeAlpha**。
+>
+> **实践提醒**：如果你自己手写交换链、又想要透明，`POST_MULTIPLIED` 确实是一种做法；
+> 但本项目走的是"图层 RGBA + 透明清屏"这条路，两者都能达成透明效果，别混为一谈。
 
 ## 选择表面格式
 
@@ -195,9 +210,14 @@ vkCreateSwapchainKHR(device, &info, nullptr, &swapchain);
 | 参数 | 值 | 说明 |
 |---|---|---|
 | `imageUsage` | `COLOR_ATTACHMENT_BIT` | 作为渲染目标 |
-| `compositeAlpha` | `POST_MULTIPLIED` | **透明** |
+| `compositeAlpha` | `OPAQUE` 或 `INHERIT`（helper 按支持情况选） | 透明靠图层 RGBA + 清屏 alpha=0 |
 | `preTransform` | `caps.currentTransform` | 跟随屏幕旋转 |
 | `oldSwapchain` | 旧交换链 | 重建时复用资源 |
+
+> [!note] 本项目不手写这段，而是调 helper
+> 上面是**手写交换链**的写法（理解原理用）。
+> 本项目实际调用 `ImGui_ImplVulkanH_CreateOrResizeWindow(...)`（`VulkanGraphics.cpp`），
+> 交换链、RenderPass、Framebuffer 都由 helper 一并创建。
 
 ## 获取图像与视图
 
@@ -290,10 +310,12 @@ if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
     printf("  OPAQUE\n");
 if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR)
     printf("  PRE_MULTIPLIED\n");
-if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR)
-    printf("  POST_MULTIPLIED  ← 覆盖层需要这个\n");
+if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
+    printf("  OPAQUE\n");
 if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR)
-    printf("  INHERIT  ← 或这个\n");
+    printf("  INHERIT  ← 本项目 helper 会用到的\n");
+if (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR)
+    printf("  POST_MULTIPLIED\n");
 
 uint32_t fmtCount;
 vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, surface, &fmtCount, nullptr);
@@ -304,18 +326,19 @@ for (auto& f : fmts)
     printf("  format=%d colorSpace=%d\n", f.format, f.colorSpace);
 ```
 
-**重点确认你的设备支持 `POST_MULTIPLIED` 或 `INHERIT`**——
-不支持的话透明覆盖层做不了（只能用 OPAQUE，会有黑底）。
+**重点是确认设备至少支持 `OPAQUE` 或 `INHERIT` 之一**（几乎所有设备都支持）。
+本项目的透明**不依赖某个特定的 compositeAlpha**，而是靠"图层 RGBA + 清屏 alpha=0"，
+所以这里主要是了解设备能力，不是"必须找到 POST_MULTIPLIED"。
 
 ## 验收清单
 
 - [ ] 理解交换链解决"撕裂"问题（双/三缓冲）（说出"一个显示、一个绘制"）
 - [ ] 知道 `ANativeWindow` 是 BufferQueue 的生产者接口（说出生产/消费关系）
 - [ ] 会创建 `VkSurfaceKHR`（需要 `VK_USE_PLATFORM_ANDROID_KHR`）（成功创建 surface）
-- [ ] 知道 `compositeAlpha` 必须设为 `POST_MULTIPLIED` 才能透明 ★（说出用 OPAQUE 会变黑块）
+- [ ] 知道本项目的透明靠"图层 RGBA + 清屏 alpha=0"，不依赖 `POST_MULTIPLIED` ★（说出项目和"必须 POST_MULTIPLIED"说法的区别）
 - [ ] 知道几种呈现模式的区别（FIFO 一定支持）（说出 FIFO/MAILBOX/IMMEDIATE 差异）
 - [ ] 知道每帧三步：acquire → render → present（按顺序复述）
 - [ ] 知道尺寸变化要重建交换链，且必须先 waitIdle（说出为什么）
-- [ ] 跑通了能力查询，确认设备支持透明合成（输出支持 POST_MULTIPLIED）
+- [ ] 跑通了能力查询，看到设备支持的 compositeAlpha 模式（输出各模式）
 
 → 下一章：[[第60章-动态加载libvulkan]]　—— 理解"不链接也能用 Vulkan"的做法，以及它为什么对本项目是必需的。

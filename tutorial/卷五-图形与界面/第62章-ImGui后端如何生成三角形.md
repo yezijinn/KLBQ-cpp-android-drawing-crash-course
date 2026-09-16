@@ -82,7 +82,7 @@ vkCreateRenderPass(device, &rpInfo, nullptr, &renderPass);
 > [!note] `loadOp = CLEAR` 就是"透明背景"的关键之一
 > 每帧先用透明色（alpha=0）清空，然后画 UI。
 > 没画到的地方就是透明的。
-> 配合第 59 章的 `compositeAlpha = POST_MULTIPLIED`，
+> 配合图层本身的 `RGBA_8888` 格式（第 64 章），
 > 最终合成时透明部分不会遮挡下面的游戏画面。
 
 ## 步骤 ④：正交投影
