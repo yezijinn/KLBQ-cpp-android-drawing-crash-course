@@ -297,7 +297,7 @@ void MergeRegions(std::vector<std::pair<uint64_t,uint64_t>> &regions) {
 }
 ```
 
-本项目 `Driver::GetScanRegions()` 里就有这段（第 20 章提过）：
+本项目 `Driver::GetScanRegions()` 里就有这段（第 22 章提过）：
 
 ```cpp
 std::sort(regions.begin(), regions.end(), [](const auto &l, const auto &r) {
