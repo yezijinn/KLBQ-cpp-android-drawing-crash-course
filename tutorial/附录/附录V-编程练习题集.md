@@ -1013,8 +1013,8 @@ SELinux 状态、几个关键进程的 PID。
 > // 验证不可交换
 > Mat4 T = Translation(10, 0, 0);
 > Mat4 S = Scale(2);
-> assert(GetPosition(Mul(T, S)).x == 10.0f);   // T*S
-> assert(GetPosition(Mul(S, T)).x == 20.0f);   // S*T  ← 不同！
+> assert(GetPosition(Mul(T, S)).x == 20.0f);   // T*S：平移被缩放放大
+> assert(GetPosition(Mul(S, T)).x == 10.0f);   // S*T：平移不变  ← 不同！
 > ```
 
 ### 题 4.3 四元数转矩阵（★★）

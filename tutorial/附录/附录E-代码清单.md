@@ -116,7 +116,7 @@ aliases: [附录E, codes]
 | UTF-32 → UTF-8 | 85 | `AppendUtf8(out, c)` |
 | FName 解析 | 85 | `blockAddr + blockOff*2` |
 | 四元数 → 矩阵 | 47、86 | `TransformToMatrix()` |
-| 局部 × 父级 | 48 | `MatrixMulti(local, c2w)` |
+| 父级 × 局部 | 48 | `MatrixMulti(local, c2w)`（源码行向量约定，顺序与数学写法相反） |
 | 视图矩阵 | 49 | `matrix[15] = -(camX*m[3]+...)` |
 | 投影 `t` | 50 | `t = tanf(FOV*0.5f*DEG2RAD)` |
 | W2S | 51 | `(clip/w + 1) * px` |
