@@ -52,49 +52,38 @@ int CreateVirtualTouch(int screenW, int screenH) {
     ioctl(fd, UI_SET_KEYBIT, BTN_TOUCH);
     ioctl(fd, UI_SET_KEYBIT, BTN_TOOL_FINGER);
 
-    // 3. 声明支持哪些绝对轴 + 设置范围
-    struct uinput_abs_setup absSetup = {};
-
-    absSetup.code = ABS_MT_SLOT;
-    absSetup.absinfo.maximum = 9;              // 最多 10 个触点
-    ioctl(fd, UI_ABS_SETUP, &absSetup);
-    ioctl(fd, UI_SET_ABSBIT, ABS_MT_SLOT);
-
-    absSetup.code = ABS_MT_TRACKING_ID;
-    absSetup.absinfo.maximum = 0xFFFF;
-    ioctl(fd, UI_ABS_SETUP, &absSetup);
-    ioctl(fd, UI_SET_ABSBIT, ABS_MT_TRACKING_ID);
-
-    absSetup.code = ABS_MT_POSITION_X;
-    absSetup.absinfo.minimum = 0;
-    absSetup.absinfo.maximum = screenW;        // ★ 与屏幕一致
-    ioctl(fd, UI_ABS_SETUP, &absSetup);
-    ioctl(fd, UI_SET_ABSBIT, ABS_MT_POSITION_X);
-
-    absSetup.code = ABS_MT_POSITION_Y;
-    absSetup.absinfo.maximum = screenH;
-    ioctl(fd, UI_ABS_SETUP, &absSetup);
-    ioctl(fd, UI_SET_ABSBIT, ABS_MT_POSITION_Y);
-
-    // 4. 单点触摸兼容（有些 App 只认这个）
+    // 3. 声明支持哪些绝对轴（用 SET_ABSBIT，不用新版 UI_ABS_SETUP）
     ioctl(fd, UI_SET_ABSBIT, ABS_X);
     ioctl(fd, UI_SET_ABSBIT, ABS_Y);
-    absSetup.code = ABS_X; absSetup.absinfo.maximum = screenW;
-    ioctl(fd, UI_ABS_SETUP, &absSetup);
-    absSetup.code = ABS_Y; absSetup.absinfo.maximum = screenH;
-    ioctl(fd, UI_ABS_SETUP, &absSetup);
+    ioctl(fd, UI_SET_ABSBIT, ABS_MT_POSITION_X);
+    ioctl(fd, UI_SET_ABSBIT, ABS_MT_POSITION_Y);
+    ioctl(fd, UI_SET_ABSBIT, ABS_MT_TRACKING_ID);
 
-    // 5. 设备属性
+    // 4. 设备属性 + 随机名字/ID（项目用随机值，避免被识别为固定虚拟设备）
     ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);   // 直触屏（不是触摸板）
 
-    // 6. 填写设备信息
-    struct uinput_setup setup = {};
-    strcpy(setup.name, "Virtual Touch");
-    setup.id.bustype = BUS_VIRTUAL;
-    setup.id.vendor  = 0x1234;
-    setup.id.product = 0x5678;
-    setup.id.version = 1;
-    ioctl(fd, UI_DEV_SETUP, &setup);
+    struct uinput_user_dev ui_dev;                  // ★ 项目用的是老的 uinput_user_dev
+    memset(&ui_dev, 0, sizeof(ui_dev));
+    strncpy(ui_dev.name, "randomname", UINPUT_MAX_NAME_SIZE);
+    ui_dev.id.bustype = 0;
+    ui_dev.id.vendor  = rand() % 10 + 5;
+    ui_dev.id.product = rand() % 10 + 5;
+    ui_dev.id.version = rand() % 10 + 5;
+
+    // 5. 设置各轴的取值范围（老式写法：填 ui_dev.absmin / absmax 数组）
+    ui_dev.absmin[ABS_MT_POSITION_X] = 0;
+    ui_dev.absmax[ABS_MT_POSITION_X] = screenW;     // ★ 与屏幕一致
+    ui_dev.absmin[ABS_MT_POSITION_Y] = 0;
+    ui_dev.absmax[ABS_MT_POSITION_Y] = screenH;
+    ui_dev.absmin[ABS_X] = 0;
+    ui_dev.absmax[ABS_X] = screenW;
+    ui_dev.absmin[ABS_Y] = 0;
+    ui_dev.absmax[ABS_Y] = screenH;
+    ui_dev.absmin[ABS_MT_TRACKING_ID] = 0;
+    ui_dev.absmax[ABS_MT_TRACKING_ID] = 65535;
+
+    // 6. 一次性 write 整个 uinput_user_dev 结构体
+    write(fd, &ui_dev, sizeof(ui_dev));
 
     // 7. 创建！
     if (ioctl(fd, UI_DEV_CREATE) < 0) {
@@ -108,7 +97,17 @@ int CreateVirtualTouch(int screenW, int screenH) {
 }
 ```
 
-七个步骤，顺序不能乱：**SET_EVBIT → SET_KEYBIT → 设置 ABS 范围 → SET_PROPBIT → DEV_SETUP → DEV_CREATE**。
+顺序不能乱：**SET_EVBIT → SET_KEYBIT → SET_ABSBIT → SET_PROPBIT → 填 uinput_user_dev → write → DEV_CREATE**。
+
+> [!note] 本项目用的是**老式 `uinput_user_dev`**，不是新版 `uinput_abs_setup`
+> 新版 Linux 提供了 `UI_ABS_SETUP` + `UI_DEV_SETUP`（更清晰），
+> 但**本项目 `TouchHelperA.cpp` 用的是老的 `uinput_user_dev` 结构体**：
+> 把所有轴的范围填进 `ui_dev.absmin[] / absmax[]`，然后 `write(fd, &ui_dev, sizeof(ui_dev))` 一次性写入。
+> 两种写法都能用，**以项目为准就是老式这套**。
+>
+> 项目还多做了一件事：**照抄真实触摸屏的能力**——用 `EVIOCGID` 读真实设备的 vendor/product/version，
+> 用 `EVIOCGBIT(EV_KEY, ...)` 读它支持的按键位图，逐个 `UI_SET_KEYBIT` 抄过去。
+> 目的：让虚拟设备和真实设备能力一致，App 不会因为它"缺少某个能力"而忽略它。
 
 ## 注入事件
 
