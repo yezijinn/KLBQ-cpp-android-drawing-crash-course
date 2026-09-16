@@ -26,6 +26,11 @@ aliases: [ch32]
   权限：Linux 文件权限 + SELinux
 ```
 
+> [!note] 上面出现的 `JNI` 是什么
+> **JNI = Java Native Interface**（Java 原生接口）：Android 里 **Java 代码调用 C/C++ 代码的桥梁**。
+> 普通 App 想跑原生代码，必须通过 JNI（Java 层声明一个 `native` 方法，C++ 层实现对应函数）。
+> **本项目的可执行文件不走 JNI**——它直接以原生程序运行，不需要 Java 层。这正是形态 B 的便利之一。
+
 ## 五个维度的对比
 
 | 维度 | APK + .so | 独立可执行文件 |

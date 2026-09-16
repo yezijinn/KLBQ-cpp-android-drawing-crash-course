@@ -196,7 +196,7 @@ public:
     std::string GetName(uint32_t id) const;
 
     uint64_t BlocksAddr() const { return (uint64_t)blocks_.data(); }
-    uint32_t Count() const { return (uint32_t)entries_.size(); }
+    uint32_t Count() const { return (uint32_t)index_.size(); }
 
     static constexpr size_t BLOCK_SIZE = 65536;
 
@@ -330,7 +330,10 @@ static TransformComponent* NewTransform(Vec3 loc) {
 
 // 初始化人形骨架（15 个关键骨骼）
 static void InitSkeleton(PaddedBone *bones, Vec3 root) {
-    memset(bones, 0, BONE_COUNT * sizeof(PaddedBone));
+    // 注意：PaddedBone 含带默认成员的成员，属"非平凡类型"，
+    // 不能用 memset 清零（会有 -Wclass-memaccess 警告，且不安全）。
+    // 用值初始化逐个清空（同时把 padding 也清零）：
+    for (int i = 0; i < BONE_COUNT; i++) bones[i] = PaddedBone{};
 
     auto set = [&](int idx, float dx, float dy, float dz) {
         if (idx < 0 || idx >= BONE_COUNT) return;
@@ -409,7 +412,7 @@ Actor* SpawnActor(const char *name, Vec3 loc, bool isCharacter, bool isAI) {
         AttachComponent(a, (ComponentHeader*)ch);
 
         // 碰撞体（胶囊）
-        AttachCollider(a, COL_CAPSULE, 34.0f, 88.0f);
+        AttachCollider(a, COL_CAPSULE, 34.0f, 88.0f, 0.0f);   // 第 3 个参数 capsule 用不到，传 0
     } else {
         // 静态物体：盒子碰撞体
         AttachCollider(a, COL_BOX, 50.0f, 50.0f, 50.0f);
@@ -596,8 +599,15 @@ void TickWorld(float dt) {
 
 ## 四、main.cpp
 
+> [!warning] 这个 main.cpp 只能在 Linux / WSL / Android 上编译
+> 它用了 `<unistd.h>`、`getpid()`、`usleep()`——都是 **Linux 专有** API，
+> 在 Windows 的原生终端里**编译不过**。
+> 想在 Windows 上跑，请用 **WSL**（Windows 里的 Linux 子系统），
+> 或直接用下面的 **NDK 交叉编译**推到手机上跑。
+> `demo_engine.h` / `demo_engine.cpp` 本身是跨平台的（已验证可编译）。
+
 ```cpp
-// main.cpp
+// main.cpp（仅 Linux / WSL / Android）
 #include "demo_engine.h"
 #include <unistd.h>
 #include <cstdio>

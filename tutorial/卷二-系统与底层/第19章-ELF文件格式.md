@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     switch (eh.e_type) {
         case ET_REL:  printf("可重定位 (.o)\n"); break;
         case ET_EXEC: printf("可执行文件\n"); break;
-        case ET_DYN:  printf("动态库/PIE\n"); break;
+        case ET_DYN:  printf("动态库/PIE\n"); break;   // PIE = 位置无关可执行文件
         default:      printf("其它 (%d)\n", eh.e_type); break;
     }
     printf("架构   : 0x%X %s\n", eh.e_machine,
@@ -243,6 +243,11 @@ gcc -Wall elfhead.c -o elfhead
 # 或者解析一个 .so
 ./elfhead /system/lib64/libc.so
 ```
+
+> [!note] 上面出现的 `PIE` 是什么
+> **PIE = Position Independent Executable**（位置无关可执行文件）：不写死绝对地址、靠相对偏移定位，
+> 因此能加载到内存任意位置（配合 ASLR 地址随机化）。**Android 5.0 起强制要求可执行文件是 PIE。**
+> 所以 `ET_DYN`（动态类型）现在既可能是 `.so`，也可能是 PIE 可执行文件——这是现代系统的常态。
 
 你会看到 3~5 个 `LOAD` 段：R、R+X（代码）、R+W（数据）。
 对照第 17 章的 `/proc/pid/maps`——**那些段的权限就是这么来的。**
