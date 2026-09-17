@@ -294,6 +294,83 @@ private:
 
 这就是抽象层的价值——亲手加一次体会最深。
 
+## 课后习题
+
+### 习题 80.1 用接口 + 多态实现可切换后端（★★）
+
+**任务要求**：定义抽象接口 `IDriver`（`read` 纯虚），实现两个后端 `MemDriver` 和 `FakeDriver`，
+业务函数只认 `IDriver*`，验证切换后端时业务代码**零改动**。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <cassert>
+
+class IDriver {
+public:
+    virtual ~IDriver() = default;
+    virtual int Read(uint64_t addr, void* buf, size_t size) = 0;
+    template <typename T> T Read(uint64_t addr) {
+        T v{};
+        if (Read(addr, &v, sizeof(T)) <= 0) v = T{};
+        return v;
+    }
+};
+
+// 后端 1：真实内存
+class MemDriver : public IDriver {
+    const uint8_t* base_;
+public:
+    explicit MemDriver(const uint8_t* b) : base_(b) {}
+    int Read(uint64_t addr, void* buf, size_t size) override {
+        memcpy(buf, base_ + addr, size);
+        return (int)size;
+    }
+};
+
+// 后端 2：假数据（用于测试）
+class FakeDriver : public IDriver {
+public:
+    int Read(uint64_t, void* buf, size_t size) override {
+        memset(buf, 0xAB, size);   // 总是返回 0xAB
+        return (int)size;
+    }
+};
+
+// 业务函数：只认 IDriver*
+int business_read_hp(IDriver* dr) {
+    return dr->Read<int>(0);   // 读偏移 0 处的 int
+}
+
+int main() {
+    uint8_t mem[16] = {0};
+    int hp = 1234;
+    memcpy(mem, &hp, 4);
+
+    MemDriver  real(mem);
+    FakeDriver fake;
+    IDriver* drivers[2] = { &real, &fake };
+
+    assert(business_read_hp(drivers[0]) == 1234);      // 真实后端
+    assert(business_read_hp(drivers[1]) == 0xABABABAB); // 假后端（同一业务代码）
+    printf("真实后端 hp=%d  假后端 hp=0x%X\n",
+           business_read_hp(drivers[0]), business_read_hp(drivers[1]));
+    printf("习题 80.1 全部通过（业务代码零改动）\n");
+    return 0;
+}
+```
+
+**验证断言**：同一个 `business_read_hp`，传 `MemDriver` 得 `1234`，传 `FakeDriver` 得 `0xABABABAB`——
+**业务代码一行没改**。
+
+> [!tip] 这道题练什么
+> ① **面向接口编程**——业务只依赖 `IDriver*`，不关心背后是谁；
+> ② **多态分发**——虚函数表在运行时选对实现；
+> ③ 这正是本项目 `dr` 能是 `Driver` 或 `MemDriver` 的原理（第 80 章核心）。
+
 ## 验收清单
 
 - [ ] 理解"面向接口编程"解决的问题（说出"业务代码不依赖具体后端"）
