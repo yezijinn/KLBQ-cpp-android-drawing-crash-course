@@ -384,6 +384,65 @@ int main() {
 | 编译报"抽象类不能实例化" | 派生类漏实现纯虚函数 | 实现所有 `= 0` 的函数 |
 | 虚函数调用没生效 | 用了值传递（切片）| 用指针或引用传递 `IDriver*` |
 
+## 动手演练：真实功能扩展 —— 新增第三个数据源适配器
+
+### 【业务需求场景描述】
+
+项目现在有两种后端（`Driver` 内核 / `MemDriver` 系统调用）。假设你要接入一个**通过网络转发**的第三后端（把读写请求发给另一台设备处理）。得益于 `IDriver` 抽象，**业务代码一行都不用改**。
+
+### 【修改或扩展的文件列表提示】
+
+| 文件 | 操作 |
+|---|---|
+| `include/My_Utils/SocketDriver.h` | **新建**：继承 `IDriver`，实现 6 个纯虚函数 |
+| `main.cpp` | 修改：按配置实例化 `SocketDriver` 而非 `MemDriver` |
+| `include/My_Utils/MemDriver.h` | 参考：照它的转发模式写 |
+
+### 【扩展接口契约骨架代码】
+
+```cpp
+// SocketDriver.h —— 第三个后端（网络转发）
+#pragma once
+#include "driver.h"     // IDriver
+
+class SocketDriver : public IDriver {
+public:
+    // TODO 1: 构造函数里建立 socket 连接
+
+    // 必须实现的 6 个纯虚函数：
+    int  Read(uint64_t address, void *buffer, size_t size) override;
+    int  Write(uint64_t address, void *buffer, size_t size) override;
+    int  GetPid(std::string_view packageName) override;
+    int  GetGlobalPid() override;
+    void SetGlobalPid(int pid) override;
+    bool GetModuleAddress(std::string_view moduleName, short segmentIndex,
+                          uint64_t *outAddress, bool isStart) override;
+
+    // 内核独有能力：安全默认值
+    bool DumpMemory(std::string_view target, std::string *dumpPath = nullptr) override { return false; }
+    std::vector<std::pair<uintptr_t, uintptr_t>> GetScanRegions() override { return {}; }
+private:
+    int sock_ = -1;
+    int globalPid_ = 0;
+};
+```
+
+### 【自测验证断言与验收标准】
+
+```cpp
+// 验证：业务代码零改动
+IDriver* dr = new SocketDriver();   // 只换这一处
+uint64_t hp = dr->Read<uint64_t>(base + 0x370);  // 调用方式完全一样
+assert(dr->GetGlobalPid() == 期望的 pid);
+```
+
+| 验收项 | 标准 |
+|---|---|
+| 6 个纯虚函数全部实现 | 编译通过（无"抽象类不能实例化"）|
+| `draw_Gui.cpp` **一行未改** | 用 `diff` 确认 |
+| 读写语义一致 | 同地址读出的值与 `MemDriver` 一致 |
+| 内核独有能力返回安全值 | 调 `DumpMemory` 返回 false 不崩 |
+
 ## 验收清单
 
 - [ ] 理解"面向接口编程"解决的问题（说出"业务代码不依赖具体后端"）
