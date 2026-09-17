@@ -323,6 +323,15 @@ void PrintDrawData(ImDrawData *dd) {
 > 顶点数组 `VtxBuffer` + 索引数组 `IdxBuffer` + 命令数组 `CmdBuffer`（按纹理分组）。
 > 一帧的 UI 就被压成这些数组，交给后端画。
 
+## 常见坑排查表
+
+| 症状 | 最可能的原因 | 解法 |
+|---|---|---|
+| `Render()` 后画面**没变化** | 忘了 `NewFrame()` | 每帧顺序：`NewFrame → UI → Render` |
+| 顶点数**每帧增长** | `NewFrame` 没配对 | 确认帧首必调 `NewFrame` |
+| 界面**错位/重叠** | 坐标用了世界坐标 | ImGui 用**屏幕坐标** |
+| 文字不显示 | 字体图集没加载 | 先 `AddFont` + `Build` 再 `NewFrame` |
+
 ## 验收清单
 
 - [ ] 能说出立即模式与保留模式的区别（说出"立即模式无控件对象、每帧重描述"）
