@@ -305,6 +305,53 @@ vaddr = 基址 + p_vaddr
 读一个"文件里的地址"和读一个"内存里的地址"要用不同的偏移。
 **本项目全部是读内存**，所以一律用 `基址 + p_vaddr`。
 
+## 课后习题
+
+### 习题 19.1 手写 ELF 魔数检测器（★★）
+
+**任务要求**：写 `is_elf(const uint8_t* data)`，检查文件头 4 字节是否为 `7f 45 4c 46`（`\x7fELF`）。
+
+**参考实现**：
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+#include <assert.h>
+
+int is_elf(const uint8_t* data) {
+    return data[0] == 0x7f && data[1] == 'E' &&
+           data[2] == 'L'  && data[3] == 'F';
+}
+
+int main(void) {
+    uint8_t elf[4] = {0x7f, 'E', 'L', 'F'};
+    uint8_t notelf[4] = {'P', 'K', 3, 4};   // ZIP 头
+    assert(is_elf(elf));
+    assert(!is_elf(notelf));
+    printf("ELF 魔数 = 7f 45 4c 46\n");
+    printf("习题 19.1 全部通过\n");
+    return 0;
+}
+```
+
+**验证断言**：`7f 45 4c 46` 判为 ELF，`50 4b 03 04`（ZIP）判为非 ELF。
+
+> [!tip] 魔数是什么
+> 每个文件格式开头都有"魔数"标识类型。ELF 的魔数是 `0x7f` 后跟 ASCII 的 `ELF`（`45 4c 46`）。
+> `file` 命令就是靠读魔数判断文件类型的。
+
+### 习题 19.2 解析 `e_type` 判断文件类型（★★）
+
+**要求**：说出 `e_type` 为 1、2、3 分别代表什么；为什么现代可执行文件常是 3（DYN）。
+
+> [!question]- 参考答案
+> - `1 = ET_REL`（可重定位，`.o` 文件）；
+> - `2 = ET_EXEC`（传统可执行，写死绝对地址）；
+> - `3 = ET_DYN`（动态库 **或 PIE 可执行文件**）。
+> 现代系统（Android 5.0+ 强制）要求可执行文件是 **PIE**（位置无关），
+> 以便配合 ASLR 加载到随机基址——所以现在可执行文件也标 `ET_DYN`，
+> 需要用其他字段区分它到底是 `.so` 还是 PIE 可执行文件。
+
 ## 验收清单
 
 - [ ] 能从 16 进制里认出 ELF 魔数 `7f 45 4c 46`（用 `xxd -l 16 /bin/ls` 看到 `7f 45 4c 46`）
