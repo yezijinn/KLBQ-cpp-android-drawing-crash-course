@@ -388,6 +388,11 @@ for (auto& f : fmts)
 | 提交后**画面不更新** | 没 `vkQueuePresentKHR` 或没等 fence | 确认每帧 `Acquire`→画→`Present` 完整 |
 | 黑屏一闪退出 | `vkAcquireNextImageKHR` 返回 `OUT_OF_DATE` | 重建交换链（窗口尺寸变了）|
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 把上面的动手与结论串成一句话，再进入下一章。
+
 ## 验收清单
 
 - [ ] 理解交换链解决"撕裂"问题（双/三缓冲）（说出"一个显示、一个绘制"）

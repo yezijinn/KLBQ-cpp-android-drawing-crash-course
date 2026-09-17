@@ -426,6 +426,11 @@ int main(void) {
 > `open`/`read`/`write` 是 POSIX 系统调用。Windows 上用 WSL 或 Android 设备。
 > 本项目配置文件就是这么存的（`ConfigManager::SaveConfig`）。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 把上面的动手与结论串成一句话，再进入下一章。
+
 ## 验收清单
 
 - [ ] 知道 `open/read/write` 与 `fopen/fread` 的区别及各自适用场合（说出"系统调用无缓冲、标准库带缓冲；按行用 fgets"）

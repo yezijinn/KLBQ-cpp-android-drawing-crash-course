@@ -443,6 +443,11 @@ int main(int argc, char** argv) {
 
 **验收**：`--maps` 输出与 `cat /proc/<pid>/maps` 一致；`--find <崩溃地址>` 能报出对应模块。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 把上面的动手与结论串成一句话，再进入下一章。
+
 ## 验收清单
 
 - [ ] 会用 `sscanf` 解析 maps 每一行（解析出起止地址和权限）

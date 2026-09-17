@@ -302,6 +302,11 @@ ndk-build -B
 - [ ] **确认产物类型**：`grep BUILD_ Android.mk` → 末行是 `BUILD_EXECUTABLE`
 - [ ] **验证 c++20 生效**：`grep -n 'c++' Android.mk Application.mk` → 模块级 `c++20` 覆盖应用级 `c++17`
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 把上面的动手与结论串成一句话，再进入下一章。
+
 ## 验收清单
 
 - [ ] 能解释本项目 `Android.mk` 每一段的作用（逐段说出 CLEAR_VARS/预编译库/主模块/链接 的作用）
