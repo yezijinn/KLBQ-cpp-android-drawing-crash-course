@@ -10,6 +10,10 @@ aliases: [ch29]
 > 会写 Makefile，并能逐行读懂本项目的 `Android.mk` 和 `Application.mk`。
 > 这是第 33 章（真正编译）和第 44 章（工程结构）的基础。
 
+> [!note] 承上
+> 上一章讲了静态库和链接。
+> 本章讲**怎么把构建过程自动化**——Makefile，以及 Android 的 `Android.mk`。
+
 ## 先看一个最小 Makefile
 
 ```makefile
