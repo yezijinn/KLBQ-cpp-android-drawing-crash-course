@@ -31,3 +31,4 @@ __pycache__/
 *.log
 tmp/
 _cctest/  
+_di/  
