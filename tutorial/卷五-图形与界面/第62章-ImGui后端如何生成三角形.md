@@ -375,6 +375,15 @@ backend.SavePPM("output.ppm");
 > [!note] loadOp=CLEAR 是透明的关键
 > 每帧先用透明色清空，没画到的地方就是透明的。配合图层 RGBA 格式，透明部分不挡游戏画面。
 
+## 常见坑排查表
+
+| 症状 | 最可能的原因 | 解法 |
+|---|---|---|
+| 画面**全黑** | 清屏色的 alpha 不是 0 | `ClearValue.color.float32[3] = 0` |
+| 图形**位置偏移** | 投影参数（scale/translate）算错 | 检查 push constant 里的 `[4]` 数组 |
+| 三角形**数量不对** | 索引缓冲没上传 | 确认 `IdxBuffer` 也传到 GPU |
+| 画面**撕裂** | 呈现模式不对 | 用 `VK_PRESENT_MODE_FIFO_KHR` |
+
 ## 验收清单
 
 - [ ] 能说出后端渲染的六个步骤（扩容→传顶点→设管线→设正交→遍历命令→结束）
