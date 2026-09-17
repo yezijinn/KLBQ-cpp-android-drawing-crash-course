@@ -384,6 +384,65 @@ regions.resize(mergedCount);
 | 读 `/proc/<pid>/maps` 为空 | 权限不足 | 需要 root 或同 UID |
 | 扫描时崩在某个区域 | 该区域不可读（`---`）| 只扫 `r--`/`rw-` 的段 |
 
+## 综合实战：扩展 memview 成一个内存分析工具（脱离指导）
+
+> [!important] 独立完成
+> 基础 `memview` 只列模块。现在把它扩展成一个**有实际用处的分析工具**。
+
+**业务需求**：`memview <pid> [选项]` 支持：
+
+```bash
+./memview 1234                 # 默认：列模块 + 基址
+./memview 1234 --maps          # 打印完整 maps 分组（可读/可写/可执行）
+./memview 1234 --find 0x7f00   # 找哪个模块落在该地址（定位崩溃地址用）
+./memview 1234 --regions       # 列出可扫描区域（合并相邻）
+```
+
+**接口骨架**：
+
+```cpp
+#include <vector>
+#include <string>
+#include <cstdint>
+
+struct Region {
+    uint64_t start, end;
+    char perms[5];      // "r-xp"
+    std::string path;   // 模块路径
+};
+
+// 解析 /proc/<pid>/maps 的每一行（第 22 章学过 sscanf）
+std::vector<Region> ParseMaps(int pid) {
+    // TODO: 逐行 sscanf 出 start/end/perms/path
+}
+
+// --find：二分查找地址落在哪个 Region
+const Region* FindRegion(const std::vector<Region>& regions, uint64_t addr) {
+    // TODO: 用二分（regions 已按地址升序）
+}
+
+// --regions：只留 r--/rw- 的段，合并相邻
+std::vector<Region> ScanRegions(const std::vector<Region>& regions) {
+    // TODO: 过滤 + 合并
+}
+
+int main(int argc, char** argv) {
+    // TODO: 解析 pid + 选项，分派到上面三个函数
+}
+```
+
+**自主实现要求**：
+
+| 要求 | 考察点 |
+|---|---|
+| `--find` 用**二分**（不是线性扫）| 算法效率 |
+| `--regions` 合并相邻段 | 区间合并 |
+| maps 每行解析健壮（path 可能为空）| 边界处理 |
+| pid 不存在时明确报错 | 错误处理 |
+| 输出格式化（对齐的表格）| 可用性 |
+
+**验收**：`--maps` 输出与 `cat /proc/<pid>/maps` 一致；`--find <崩溃地址>` 能报出对应模块。
+
 ## 验收清单
 
 - [ ] 会用 `sscanf` 解析 maps 每一行（解析出起止地址和权限）
