@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷五, Android, uinput]
-day: 43
+day: 45
 aliases: [ch70]
 ---
 

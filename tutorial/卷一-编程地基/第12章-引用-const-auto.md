@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷一, C++]
-day: 6
+day: 7
 aliases: [ch12]
 ---
 

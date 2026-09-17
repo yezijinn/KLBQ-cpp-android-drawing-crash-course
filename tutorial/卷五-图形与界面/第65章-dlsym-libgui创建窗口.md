@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷五, Android, libgui, dlopen]
-day: 41
+day: 42
 aliases: [ch65]
 ---
 

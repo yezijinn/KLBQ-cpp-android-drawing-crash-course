@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷五, Android, SurfaceFlinger]
-day: 40
+day: 41
 aliases: [ch64]
 ---
 

@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷二, 操作系统, 文件IO]
-day: 13
+day: 14
 aliases: [ch22]
 ---
 
