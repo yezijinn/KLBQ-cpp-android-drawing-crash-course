@@ -308,6 +308,10 @@ bool pmem_read_batch(pid_t pid, void **remotes, void **locals,
 
 ## 动手：读写你自己的 demo 进程
 
+> [!important] 前置条件
+> `process_vm_readv` 是 **Linux 专有系统调用**。Windows 上用 **WSL**，或直接在 Android 设备上做。
+> 本章读的是**你自己的靶子进程**（不是真实游戏），无需 root。
+
 写一个"靶子"程序：
 
 ```c

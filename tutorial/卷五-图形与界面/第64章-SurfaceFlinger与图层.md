@@ -321,6 +321,10 @@ Display 2 (虚拟屏)    layerStack = 2
 
 ## 动手：观察你设备的图层
 
+> [!important] 前置条件
+> 需要**一台 Android 设备**（`adb` 已连）。命令都是 `adb shell`，在电脑上跑。
+> 无设备：读懂 `dumpsys SurfaceFlinger` 输出格式即可，动手留到有设备时做。
+
 ```bash
 # 1. 完整图层列表
 adb shell dumpsys SurfaceFlinger | head -60

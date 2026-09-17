@@ -350,6 +350,10 @@ regions.resize(mergedCount);
 
 ## 动手：扩展 memview
 
+> [!important] 前置条件
+> 需要 **Linux / WSL / Android**（依赖 `/proc/<pid>/maps`）。
+> 读**自己的 demo 进程**无需 root；读别人的进程才要。
+
 加三个功能：
 
 1. **按权限过滤**：`./memview <pid> --perm rw` 只显示可读写

@@ -387,6 +387,9 @@ const bool 是人机 = (name_.find("BP_Character_JiaRen") != std::string::npos);
 
 ## 动手：名字表扫描器
 
+> [!important] 前置条件
+> 扫的是**demo 引擎的名字表**（本地内存），可在**任意平台本机跑**；读真实游戏才需 root 设备。
+
 写一个程序，遍历 demo 引擎的名字表，把所有名字打出来：
 
 > [!note] 这段 main 用到本章前面定义的 `MemReader`、`ReadNameFromProcess()` 等，

@@ -345,6 +345,10 @@ adb shell /data/local/tmp/embree_demo
 
 ## 动手：性能测量
 
+> [!important] 前置条件
+> 需要**已链接 Embree 库**（第 43 章的 6 个 `.a` + `embree4/rtcore.h`）。
+> 未装 Embree：读懂 API 调用流程即可，动手留到引入库后。
+
 ```cpp
 // 建 10000 个三角形的场景
 // 测 1000 次 rtcIntersect1 的耗时

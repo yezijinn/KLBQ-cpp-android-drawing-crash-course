@@ -280,6 +280,10 @@ aarch64-linux-android-nm -D -C /tmp/libgui.so | grep -c 'createSurface'
 
 ## 动手：符号侦察器
 
+> [!important] 前置条件
+> 需要 **root 设备**（能读 `/system/lib64/libgui.so`）。
+> 侦察命令要在**设备 shell 或 `adb shell`** 里跑；无设备可跳过。
+
 写一个程序，列出 libgui.so 里所有含关键字的符号：
 
 ```cpp
