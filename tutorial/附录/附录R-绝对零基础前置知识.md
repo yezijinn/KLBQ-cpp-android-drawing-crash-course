@@ -177,9 +177,23 @@ C:\                          ← 盘符（C 盘）
 | 临时设变量 | `set NDK=C:\dev\x` | `$env:NDK = "C:\dev\x"` | `export NDK=/c/dev/x` |
 | 清屏 | `cls` | `Clear-Host` | `clear` |
 | 注释怎么写 | `rem 说明` | `# 说明` | `# 说明` |
+| **运行当前目录的程序** | `hello.exe` | `.\hello.exe` | `./hello.exe` |
 
 **看出来了吗**：PowerShell 用一整套 `动词-名词` 命名（`Get-`/`Set-`/`Remove-`），
 和 cmd、Git Bash 完全不是一套语言。**它们在同一个 Windows 里，但不是同一个世界。**
+
+> [!warning] `./程序名` 只在 Git Bash 里能跑（本教程最常见的运行报错）
+> 本教程默认用 Git Bash，所有代码块里的运行命令都写成 `./hello.exe`（`./` 表示"当前目录"）。
+> 如果你在 **cmd** 里照敲 `./hello.exe`，会报 **`'.' 不是内部或外部命令`**——这不是编译失败，是**终端语法不同**。
+>
+> | 你的终端 | 正确写法 |
+> |---|---|
+> | Git Bash | `./hello.exe` |
+> | cmd | `hello.exe`（去掉 `./`）|
+> | PowerShell | `.\hello.exe`（反斜杠）|
+>
+> **另一个坑**：`gcc -o hello hello.c` 生成的是 `hello.exe`（Windows 自动加后缀）。
+> Git Bash 里敲 `./hello` 也能跑（它会自动补 `.exe`），但 cmd 里必须敲全 `hello.exe`。
 
 #### 最容易踩的坑：`where`
 
