@@ -208,15 +208,18 @@ $NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android21-clang.c
 
 验证产物：
 
-> [!note] `file` 命令
-> `file <文件>` 会**读取文件开头，判断它是什么类型**（ELF？脚本？图片？）以及架构。
-> 卷二的 `xxd`（看字节）、`readelf`（看 ELF 结构）是同类工具，`file` 是最快的"一眼看是什么"。
-
-
-```bash
-file hello_arm64
-# ELF 64-bit LSB executable, ARM aarch64, ...
-```
+> [!warning] Windows 上没有 `file` 命令
+> `file` 是 Linux/WSL 的命令，**w64devkit 没带它**。Windows 读者用下面任一替代：
+> - **NDK 自带的 readelf**（推荐，跨平台）：
+>   ```bash
+>   $NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android-readelf.exe -h hello_arm64 | grep -E 'Class|Machine'
+>   # Class:  ELF64
+>   # Machine: AArch64
+>   ```
+> - **在手机上 `file`**（Android 系统自带）：`adb shell file /data/local/tmp/hello_arm64`
+> - **用 WSL**：`file hello_arm64` → `ELF 64-bit LSB executable, ARM aarch64`
+>
+> 最省事的其实是**直接 push 到手机运行**——能跑就说明架构对了（见第三步）。
 
 ## 第三步：push 到手机运行
 
