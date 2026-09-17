@@ -336,6 +336,11 @@ std::string NameTable::GetName(uint32_t id) const {
 
 ## 从外部解析
 
+> [!note] 这是"教学封装版"，对应项目的 `GetNameById`
+> 下面的 `ReadNameFromProcess` 是本章为**讲清原理**写的独立函数（带 `MemReader` 参数，便于单元测试）。
+> 真实项目把它封装成了 `GetNameById(nameId)`（在 `draw_Gui.cpp` 里，内部同样走 GName 池 → 块 → 条目）。
+> 两者**逻辑一致**，只是一个显式传 `MemReader`、一个用全局 `dr`。
+
 ```cpp
 std::string ReadNameFromProcess(MemReader &mem, uint64_t gnameBase,
                                  uint32_t nameId) {
