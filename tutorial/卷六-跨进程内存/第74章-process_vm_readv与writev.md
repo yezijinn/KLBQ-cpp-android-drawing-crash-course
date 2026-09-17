@@ -419,6 +419,79 @@ gcc reader.c -o reader
 
 **这就是跨进程读写的完整闭环。**
 
+## 课后习题
+
+### 习题 74.1 理解 iovec 的分散-聚集语义（★★，可本地验证）
+
+**任务要求**：`process_vm_readv` 接受**多个 iovec**——这就是"分散读"（scatter read）。
+用本地 `memcpy` 模拟"一次调用读多块"的语义：把目标内存的两段分别读到两个本地缓冲区，
+验证一次"批量"就完成，并统计调用次数。
+
+**核心骨架**（用 memcpy 模拟，跨平台可跑）：
+
+```cpp
+#include <cstdio>
+#include <cstdint>
+#include <cstring>
+#include <vector>
+#include <cassert>
+
+struct IOVec { void* base; size_t len; };
+
+// 模拟 process_vm_readv：一次调用读多个 iovec 段
+int fake_process_vm_readv(const uint8_t* remote,
+                          const IOVec* local, int liov, const IOVec* rem, int riov) {
+    if (liov != riov) return -1;
+    int total = 0;
+    for (int i = 0; i < liov; i++) {
+        memcpy(local[i].base, remote + (uintptr_t)rem[i].base, local[i].len);
+        total += (int)local[i].len;
+    }
+    return total;    // 返回总字节数
+}
+```
+
+**参考实现**：
+
+```cpp
+int main() {
+    uint8_t remote[64];
+    for (int i = 0; i < 64; i++) remote[i] = (uint8_t)i;
+
+    // 目标：从 remote 偏移 8 读 4 字节，从偏移 40 读 8 字节
+    uint8_t a[4] = {0}, b[8] = {0};
+    IOVec local[2] = { {a, 4}, {b, 8} };
+    // 注意：这里用相对偏移编码，真实 API 用远端虚拟地址
+    IOVec remv[2]   = { {(void*)(uintptr_t)8, 4}, {(void*)(uintptr_t)40, 8} };
+
+    int n = fake_process_vm_readv(remote, local, 2, remv, 2);
+    printf("一次调用读回 %d 字节\n", n);
+    assert(n == 12);
+    assert(a[0] == 8 && a[3] == 11);     // remote[8..11]
+    assert(b[0] == 40 && b[7] == 47);    // remote[40..47]
+    printf("习题 74.1 全部通过（两个 iovec，一次调用）\n");
+    return 0;
+}
+```
+
+**验证断言**：两个 iovec 一次调用读回 **12 字节**，且两段数据分别正确。
+
+> [!tip] 这道题练什么
+> `process_vm_readv` 的强大之处：**一次系统调用读多块不连续内存**（分散-聚集 I/O）。
+> 本项目读多个字段时用这个特性，把多次调用压成一次（第 81 章批量优化的基础）。
+> 本地用 `memcpy` 模拟，理解"iovec 数组 = 一次读多段"这个语义即可。
+
+### 习题 74.2 识别 errno 语义（★，概念题）
+
+**任务要求**：不看资料，说出 `process_vm_readv` 返回 `EPERM`、`ESRCH`、`EFAULT` 各代表什么。
+
+> [!question]- 参考答案
+> - **EPERM**（Operation not permitted）：没有权限读目标进程（不同 UID 且非 root，或 SELinux 拦截）。
+> - **ESRCH**（No such process）：目标 PID 不存在（进程已退出）。
+> - **EFAULT**（Bad address）：地址无效——本地或远端的 iovec 指针指向了不可访问的内存。
+>
+> 这三个是跨进程读取最常见的失败原因（第 73 章权限、深挖 F 有完整 errno 表）。
+
 ## 验收清单
 
 - [ ] 理解 `iovec` 是"地址 + 长度"（写出结构体两个字段）
