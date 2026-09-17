@@ -1593,7 +1593,7 @@ SELinux 状态、几个关键进程的 PID。
 >     return f;
 > }
 > ```
-> **关键点**：① `FontDataOwnedByAtlas = false` 必需（否则 free 静态内存崩溃）② `GetGlyphRangesChineseFull()` 覆盖常用汉字 ③ 字体数组很占体积（本书的字体 15 MB），可用 `pyftsubset` 裁剪
+> **关键点**：① `FontDataOwnedByAtlas = false` 必需（否则 free 静态内存崩溃）② `GetGlyphRangesChineseFull()` 覆盖常用汉字 ③ 字体数组约占 2.9 MB 体积，可用 `pyftsubset` 进一步裁剪
 
 ---
 

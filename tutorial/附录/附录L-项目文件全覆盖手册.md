@@ -95,7 +95,7 @@ aliases: [附录L, filemap]
 | `src/ImGui/imgui_tables.cpp` | 表格（270 KB） | 42 |
 | `src/ImGui/imgui_widgets.cpp` | 控件（555 KB） | 42 |
 | `src/ImGui/imgui_impl_vulkan.cpp` | Vulkan 后端的六步实现 | 62 |
-| `src/ImGui/heiti_ttf.cpp` | 黑体字体数组（**15.7 MB**） | 63 |
+| `src/ImGui/heiti_ttf.cpp` | 黑体字体数组（**约 2.9 MB**，即 3,033,180 字节） | 63 |
 
 ### 2.6 数学工具（4 个）
 

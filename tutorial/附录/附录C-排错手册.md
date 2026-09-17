@@ -44,7 +44,7 @@ aliases: [附录C, troubleshooting]
 **解法**：加 `-fPIE -pie`（现代 NDK 默认已开，除非手动关了）
 
 ### 7. 编译极慢
-**原因**：`-flto` + 大字体 `.cpp`（如 `heiti_ttf.cpp` 十几 MB）
+**原因**：`-flto` + 大字体 `.cpp`（如 `heiti_ttf.cpp` 约 2.9 MB，含几十万行十六进制）
 **解法**：调试期去掉 `-flto`；裁剪字体
 
 ## 部署运行类
