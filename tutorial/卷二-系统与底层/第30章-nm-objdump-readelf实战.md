@@ -301,6 +301,27 @@ objdump -d --start-address=<entry> --stop-address=<entry+64> libfoo.so
 
 把每条命令的输出记录下来——这就是你的"二进制分析笔记"。
 
+> [!success] 卷二成品：binpeek
+> 把卷二的核心技能组装成一个工具——**输入一个 ELF 文件 + 一个地址，输出"文件:行号 + 所属函数 + 所属段"**。
+>
+> **它综合了**：
+> - 第 19 章 ELF 头解析（`e_entry`、LOAD 段）
+> - 第 22 章 maps 解析（地址落在哪个段）
+> - 第 27 章符号表结构（`nm` 找函数边界）
+> - 第 30 章 `addr2line`（地址→源码行）
+>
+> ```bash
+> ./binpeek libfoo.so 0x1234
+> # 输出：
+> #   地址 0x1234 属于 .text 段
+> #   所在函数：my_function
+> #   源码位置：foo.cpp:42
+> ```
+>
+> **验收**：对一个带符号的 .so 跑一次，结果与 `addr2line -f -e libfoo.so 0x1234` 一致。
+>
+> **这是卷六 `memview` 的前身**——都是"解析二进制 + 定位地址"的工具。
+
 ## 卷二收官：你学到了什么
 
 | 章 | 能力 |
