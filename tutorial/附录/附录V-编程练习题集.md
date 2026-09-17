@@ -166,6 +166,25 @@ uint64_t follow_chain(uint64_t base, const uint64_t *offsets, int count);
 
 ### 题 1.5 位字段打包/解包（★★）
 
+> [!warning] 本题需要位运算基础
+> 位运算的系统讲解在 **卷二第 24 章**。第 03 章只给了速查表（"先混个眼熟"）。
+> **如果还没学到第 24 章，建议先跳过本题**，学完再回来做。
+>
+> **最小前置复习**（够做本题）：
+> ```c
+> // 把 3 个值打包进一个 uint16：
+> //   bits 0-3   存 a（0~15）
+> //   bits 4-9   存 b（0~63）
+> //   bits 10-15 存 c（0~63）
+> uint16_t pack(uint8_t a, uint8_t b, uint8_t c) {
+>     return (a & 0x0F) | ((b & 0x3F) << 4) | ((c & 0x3F) << 10);
+> }
+> uint8_t unpack_a(uint16_t v) { return v & 0x0F; }
+> uint8_t unpack_b(uint16_t v) { return (v >> 4) & 0x3F; }
+> uint8_t unpack_c(uint16_t v) { return (v >> 10) & 0x3F; }
+> ```
+> **核心套路**：`& 掩码` 取字段，`<< 位数` 移到目标位置。
+
 **要求**：把 4 个字段塞进一个 `uint32_t`：
 `[31:24] type | [23:16] flags | [15:8] index | [7:0] count`。
 实现 `pack` / `unpack`，并写断言测试。
@@ -242,6 +261,18 @@ uint64_t follow_chain(uint64_t base, const uint64_t *offsets, int count);
 
 **要求**：实现一个简化版 `MyStringView`：
 不拥有数据，提供 `size()` / `data()` / `substr()` / `startswith()` / `find()`。
+
+> [!note] 本题在考什么
+> 第 13 章讲了"怎么用 `string_view` 当参数"（零拷贝）。本题把它**拆开看内部**——
+> 你会发现它其实就是**两个成员**：一个指针 + 一个长度。
+>
+> **为什么值得做**：做完这题你会彻底理解"view 不拥有数据"的含义——
+> 也就理解了第 13 章第 576 行的警告"不能返回局部变量的 view"。
+>
+> **本题需要你先知道**：
+> - `SIZE_MAX` = 无符号 `size_t` 的最大值（"找不到"的约定返回值）
+> - `memcmp` 按字节比较（不比 `\0`，适合可能不带结尾符的字符串）
+> - `npos` 是"未找到"的惯用名（标准库 `std::string::npos` 同义）
 
 **提示**：只需要两个成员：`const char *p_; size_t n_;`
 
@@ -678,6 +709,21 @@ Student *create_student(const char *name, int n) {
 再实现 `find_first_zero()`（找第一个 0 位）。
 
 **提示**：`i / 64` 是字索引，`i % 64` 是位偏移。用 `1ULL << offset`。
+
+> [!note] `__builtin_ctzll` 是什么（参考答案里会用到）
+> **GCC/Clang 提供的内置函数**（不是 C 标准的一部分，但 Android 的 NDK 就是 GCC/Clang，能用）。
+> - **`ctz`** = **C**ount **T**railing **Z**eros（数末尾有几个 0）
+> - **`ll`** = long long（64 位）
+> - `__builtin_ctzll(x)` 返回"x 的二进制里，从最低位起数，连续 0 的个数"
+>
+> 例：`__builtin_ctzll(8)` → 3（8 = `...1000`，末尾 3 个 0）
+>     `__builtin_ctzll(1)` → 0（末尾 0 个 0）
+>
+> **不想用它？** 逐位检查也可以（慢一点但更易懂）：
+> ```cpp
+> for (unsigned b = 0; b < 64; b++)
+>     if (!(words_[w] & (1ULL << b))) return w * 64 + b;
+> ```
 
 > [!question]- 参考答案
 > ```cpp
