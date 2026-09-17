@@ -362,14 +362,29 @@ objdump -d --start-address=<entry> --stop-address=<entry+64> libfoo.so
 ```bash
 # 1. 编译一份带调试信息的产物
 gcc -g -O0 crash.c -o crash
-# 2. 假设崩溃在 0x1149（用 objdump 找 main 内某地址）
-objdump -d crash | grep -A5 '<main>:'
-# 3. 用 addr2line 还原
-addr2line -e crash -f -C 0x1149
+
+# 2. 用 objdump 找 main 的地址（地址是随机的，每次编译都可能不同）
+objdump -d crash | grep -A8 '<main>:'
+# 输出示例（看第一行冒号前的地址）：
+#   0000000140001490 <main>:
+#     140001498:  e8 f3 00 00 00   call ...
+#   ↑ 记下这个地址（这里是 0x140001498）
+
+# 3. 用第 2 步得到的地址还原源码行
+addr2line -e crash -f -C 0x140001498
 # 输出：
 #   main
-#   /path/crash.c:5
+#   C:/code/crash.c:3
 ```
+
+> [!warning] 地址每次编译都可能变，不要照抄
+> 上面的 `0x140001498` 只是**示例**。你必须用自己 `objdump` 输出里的真实地址。
+> **Windows/MinGW** 的地址通常是 `0x14000xxxx` 这样的长格式；
+> **Linux/Android** 常见 `0x1149` 这样的短格式（PIE 的偏移）。
+> 两者都直接用 `addr2line -e <文件> -f -C <你查到的地址>` 即可。
+>
+> **如果 addr2line 输出 `??  ??:0`**：说明该地址没落在有调试信息的代码里，
+> 多半是地址抄错了，或编译时没加 `-g`（见下条）。
 
 > [!danger] strip 后 addr2line 失效
 > `-s`（strip）会删掉调试信息，`addr2line` 就查不到了。
