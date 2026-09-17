@@ -190,6 +190,10 @@ draw->AddText(pos, color, "文字");
 draw->AddTriangle(p1, p2, p3, color, thickness);
 ```
 
+> [!note] `ESP` 是什么
+> ESP 在这里指"在屏幕上叠加显示游戏信息的辅助画面"（如方框、骨骼线、距离）——
+> 本教程用它泛指"信息显示层"。
+
 **本项目 ESP 全部用 DrawList 直绘**——因为它要画在世界坐标对应的屏幕位置，
 不属于任何窗口。
 
