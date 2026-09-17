@@ -87,6 +87,14 @@ android-ndk-r27c/
 
 ## 第二步：设置环境变量
 
+> [!important] 下面的设置只对当前终端窗口有效
+> `export` / `set` / `$env:` 设的变量**关掉窗口就失效**——这是故意的，
+> 先用临时设置跑通，确认没问题了再设永久的（本节末尾会说明）。
+>
+> **后果**：如果你今天设完，明天换个窗口敲 `ndk-build`，会报
+> `ndk-build: command not found`。**不是你没装好，是变量没了。**
+> 重新执行本节命令即可。
+
 **三个终端的写法完全不同，按你在用的那个抄**：
 
 ```bash
@@ -134,6 +142,18 @@ ndk-build --version
 ```
 
 ## 路线 A：直接用 clang 编译（最快看到结果）
+
+**先建工作目录，把源文件放进去**：
+
+```bash
+mkdir -p /c/code/hello_clang    # Git Bash
+cd /c/code/hello_clang
+```
+
+（PowerShell 用 `mkdir C:\code\hello_clang; cd C:\code\hello_clang`；
+cmd 用 `mkdir C:\code\hello_clang && cd C:\code\hello_clang`）
+
+把下面的代码**存成这个目录里的 `hello.c`**：
 
 > [!note] 这段代码用到的两个新东西
 > - `#include <android/log.h>` + `__android_log_print(...)`：**Android 的原生日志函数**，把日志写到 logcat。
