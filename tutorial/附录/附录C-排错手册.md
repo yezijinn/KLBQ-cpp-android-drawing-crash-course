@@ -183,6 +183,34 @@ adb shell dumpsys SurfaceFlinger | grep -i overlay    # 图层在吗？
 - 场景 commit 了吗？
 - 坐标系对不对（世界坐标还是局部坐标）？
 
+## 性能类
+
+### 31. 帧率低（< 60fps）
+**检查清单**：
+```bash
+adb shell atrace -t 5 gfx view      # 抓 trace 看哪一帧耗时
+```
+**常见原因**（按概率）：
+1. 每帧读太多内存（没做批量读 → 第 81 章）
+2. 每帧重建 Embree 场景（没做增量更新 → 第 99 章）
+3. 画了太多图元（ESP 物体太多）
+4. 字体图集太大导致纹理带宽瓶颈
+**解法**：先用 `atrace` 定位热点，再针对性优化（第 72 章）
+
+### 32. CPU 占用高但帧率正常
+**原因**：后台线程空转（忙等）
+**解法**：检查线程循环里有没有 `sleep`/`vsync` 等待；用 `top` 看哪个线程占用
+
+### 33. 内存持续增长（泄漏）
+**检查清单**：
+```bash
+adb shell dumpsys meminfo <pid> | head   # 看 PSS 是否持续涨
+```
+**常见原因**：ImGui 的 `FontDataOwnedByAtlas`（第 22 条）；malloc 没 free；Embree 场景没 commit 前反复 new
+
+### 34. 触摸延迟明显
+**原因**：读 `/dev/input` 的频率太低，或 `EVIOCGRAB` 没设
+**解法**：确认 touch 线程是阻塞读（有事件才返回），不要主动轮询
 ## 通用排查流程
 
 ```

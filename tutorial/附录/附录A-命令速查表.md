@@ -169,6 +169,45 @@ make -j8
 make V=1                         # 打印命令
 ```
 
+## git 常用
+
+```bash
+# 提交与推送
+git status                       # 看改动
+git add -A                       # 暂存全部
+git commit -m "信息"             # 提交
+git push origin main             # 推 GitHub
+git push gitee main              # 推 Gitee
+
+# 查看历史
+git log --oneline -10            # 最近 10 条
+git log --oneline --grep 习题     # 按关键词搜提交
+git diff <file>                  # 看某文件改动
+git show <commit>                # 看某次提交内容
+
+# 撤销
+git checkout -- <file>           # 丢弃工作区改动
+git reset HEAD <file>            # 取消暂存
+git reset --soft HEAD~1          # 撤销最近一次提交（保留改动）
+```
+
+## 性能剖析（第 72 章）
+
+```bash
+# atrace：系统级抓取（Android）
+adb shell atrace -t 5 gfx view   # 抓 5 秒图形相关 trace
+adb shell atrace --list_categories  # 看有哪些类别
+
+# perfetto：更现代的抓取
+adb shell perfetto -o /data/misc/perfetto-traces/trace -t 5s sched freq gfx view
+adb pull /data/misc/perfetto-traces/trace
+
+# simpleperf：CPU 采样
+adb shell simpleperf record -p <pid> -g --duration 5
+
+# 帧率显示（ImGui 内置）
+ImGui::GetIO().Framerate          # 代码里读，无需命令
+```
 ## 进程与内存（设备端）
 
 ```bash

@@ -141,6 +141,31 @@ aliases: [附录B, glossary]
 | **节流（Throttle）** | 限制操作执行频率 |
 | **增量更新** | 只处理变化的部分 |
 
+## 触摸与输入
+
+| 术语 | 解释 |
+|---|---|
+| **/dev/input/eventN** | 每个输入设备的字符设备节点，读它拿到原始事件 |
+| **getevent** | adb 命令，dump 输入设备的事件流 |
+| **ABS_MT_\*** | 多点触控的绝对坐标事件（POSITION_X/Y、SLOT、TRACKING_ID） |
+| **SYN_REPORT** | 一帧事件的"提交"标记，没有它事件不生效 |
+| **EVIOCGRAB** | ioctl，独占抓取输入设备（抓取后系统收不到） |
+| **uinput** | 内核机制，让用户态创建虚拟输入设备 |
+| **InputReader** | Android 从 /dev/input 读事件的系统服务 |
+| **InputDispatcher** | 把事件分发给 App 的系统服务 |
+| **pointer_location** | 开发者选项，屏幕上显示触摸点位置 |
+
+## 性能
+
+| 术语 | 解释 |
+|---|---|
+| **帧时间（frame time）** | 渲染一帧耗时，60fps = 16.67ms |
+| **vsync** | 屏幕刷新同步信号，限制帧率上限 |
+| **atrace** | Android 的 systrace 抓取工具 |
+| **perfetto** | 新一代系统 trace 工具（替代 systrace） |
+| **simpleperf** | Android 上的 CPU 采样剖析器 |
+| **Framerate** | ImGui 内置的帧率统计（`io.Framerate`） |
+| **节流（Throttle）** | 限制操作执行频率（本项目用 16ms 节流） |
 ## 缩写速查
 
 | 缩写 | 全称 |
@@ -159,5 +184,10 @@ aliases: [附录B, glossary]
 | RSS | Resident Set Size |
 | TLS | Thread Local Storage |
 | SIMD | Single Instruction Multiple Data |
+| MT | Multi-Touch（多点触控） |
+| fps | frames per second |
+| W2S | World To Screen |
+| MT | Multi-Touch |
+| fps | frames per second |
 
 → 返回 [[00-开始之前]]
