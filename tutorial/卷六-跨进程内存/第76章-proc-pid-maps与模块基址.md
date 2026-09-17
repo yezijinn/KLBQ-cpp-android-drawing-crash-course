@@ -214,6 +214,8 @@ std::vector<std::pair<uintptr_t, uintptr_t>> GetScanRegions() override {
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstdint>       // uint64_t / uint8_t / uint32_t
+#include <sys/types.h>   // pid_t
 #include <string>
 #include <vector>
 #include <fstream>

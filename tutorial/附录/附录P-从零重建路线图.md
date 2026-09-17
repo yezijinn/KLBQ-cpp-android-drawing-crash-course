@@ -542,6 +542,9 @@ private:
 
 ```cpp
 // src/target.cpp —— 靶子进程（自己的）
+#include <cstdio>        // printf
+#include <unistd.h>      // getpid / sleep
+
 struct Player {
     int   hp = 100;
     float x = 0, y = 0, z = 0;

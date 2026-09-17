@@ -288,6 +288,9 @@ O(n)，比重建 O(n log n) 快得多。
 
 ## 动手：测出加速比
 
+> [!note] 这段 main 用到本章前面定义的 `Triangle`、`BVHNode`、`BuildBVH()`、
+> `RandomVec3()` 等，**需把它们拼在一起才能编译**（或参考附录 I 的整合版）。
+
 ```cpp
 int main(void) {
     // 生成 10000 个随机三角形

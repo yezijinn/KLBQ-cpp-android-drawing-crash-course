@@ -252,6 +252,10 @@ for (uint32_t i = 0; i < nbuckets; i++)
 
 ## 动手：符号查找器
 
+> [!warning] 这段 main 是**片段**，用到本章前面定义的 `MemReader`、`LoadMaps()`、
+> `FindModuleBase()`、`ParseDynamic()`、`FindSymbol()`——**不能单独编译**。
+> 要跑通，把前面几节的实现拼在一起（或参考附录 I / 附录 E 的整合版）。
+
 ```cpp
 int main(int argc, char **argv) {
     if (argc < 4) {
