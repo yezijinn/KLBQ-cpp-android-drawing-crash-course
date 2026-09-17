@@ -15,6 +15,34 @@ aliases: [附录A, cheatsheet]
 > 三个终端的命令互不通用；完整对照表见 [[附录R-绝对零基础前置知识]] 第 3.2 节。
 > 另外：**PowerShell 里查命令位置要用 `Get-Command gcc`（或 `where.exe gcc`），不能只敲 `where gcc`**。
 
+## 跨平台命令对照总表（Windows 三终端）
+
+> [!abstract] 一张表消除 90% 的"命令不生效"
+> 本教程默认 Git Bash。若你用 cmd 或 PowerShell，照下表替换。
+
+| 动作 | Git Bash（默认）| cmd | PowerShell |
+|---|---|---|---|
+| 查命令位置 | `which gcc` | `where gcc` | `Get-Command gcc` |
+| 看当前目录 | `pwd` | `cd` | `Get-Location` |
+| 列文件 | `ls` | `dir` | `Get-ChildItem` |
+| 切目录 | `cd /c/dev` | `cd C:\dev` | `Set-Location C:\dev` |
+| 建目录（含上级）| `mkdir -p a/b` | `mkdir a\b` | `New-Item -ItemType Directory a\b` |
+| 删文件 | `rm a` | `del a` | `Remove-Item a` |
+| 删目录 | `rm -rf d` | `rmdir /s /q d` | `Remove-Item -Recurse d` |
+| 看文件内容 | `cat a.txt` | `type a.txt` | `Get-Content a.txt` |
+| 设临时变量 | `export X=1` | `set X=1` | `$env:X = "1"` |
+| 引用变量 | `$X` | `%X%` | `$env:X` |
+| 看环境变量 | `echo $PATH` | `echo %PATH%` | `$env:PATH` |
+| 路径分隔 | 冒号 `:` | 分号 `;` | 分号 `;` |
+| 运行程序 | `./app` | `app` | `.\app` |
+| 清屏 | `clear` | `cls` | `Clear-Host` |
+| 注释 | `# 说明` | `rem 说明` | `# 说明` |
+
+> [!tip] 三个保命规则
+> 1. **看代码块语言标记**：标 `bash` 就在 Git Bash 敲，`powershell` 就在 PowerShell 敲。
+> 2. **看报错语种反推终端**：`不是内部或外部命令`=cmd；`无法将...识别为 cmdlet`=PowerShell；`command not found`=Git Bash。
+> 3. **路径铁律**：全英文、无空格；Git Bash 用 `/c/dev`，cmd/PowerShell 用 `C:\dev`。
+
 ## adb
 
 ```bash
