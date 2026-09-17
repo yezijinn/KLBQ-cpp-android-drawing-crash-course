@@ -653,6 +653,108 @@ int main(void) {
 > **卷一只需要知道"异常会导致函数提前退出"这一点**——这正是 RAII 有价值的原因（RAII 保证即使提前退出，资源也会被释放）。
 > 异常的完整用法在卷二/卷五会用到时再讲。
 
+## 课后习题
+
+### 习题 11.1 用 RAII 管理动态数组（★★）
+
+**任务要求**：写一个类 `IntBuffer`，构造时按大小 `new[]`，析构时 `delete[]`，
+提供 `set`/`get`。验证离开作用域自动释放（用构造/析构打印观察）。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <cassert>
+
+class IntBuffer {
+public:
+    explicit IntBuffer(size_t n) : n_(n), data_(new int[n]) {
+        printf("构造：分配 %zu 个 int\n", n_);
+    }
+    ~IntBuffer() {
+        delete[] data_;                 // ★ 析构自动释放，不可能忘
+        printf("析构：已释放\n");
+    }
+    // 禁止拷贝（避免 double free）
+    IntBuffer(const IntBuffer&) = delete;
+    IntBuffer& operator=(const IntBuffer&) = delete;
+
+    void set(size_t i, int v) { if (i < n_) data_[i] = v; }
+    int  get(size_t i) const  { return (i < n_) ? data_[i] : 0; }
+    size_t size() const { return n_; }
+
+private:
+    size_t n_;
+    int*   data_;
+};
+
+int main() {
+    printf("--- 进入作用域 ---\n");
+    {
+        IntBuffer buf(4);
+        for (size_t i = 0; i < buf.size(); i++) buf.set(i, (int)i * 10);
+        assert(buf.get(0) == 0 && buf.get(3) == 30);
+    }
+    printf("--- 已离开 ---\n");
+    printf("习题 11.1 通过\n");
+    return 0;
+}
+```
+
+**预期输出**：构造打印 → 使用 → 离开 `{}` 时析构打印（不用手写 `delete[]`）。
+
+> [!note] 为什么要 `= delete` 拷贝
+> 若允许拷贝，两个 `IntBuffer` 会指向**同一块堆内存**，析构时 `delete[]` 两次 → 崩溃。
+> 本项目 `MemDriver(const MemDriver&) = delete;` 就是同样的道理（驱动不可拷贝）。
+
+### 习题 11.2 纯虚函数与抽象类（★★）
+
+**任务要求**：定义抽象基类 `Shape`（纯虚 `area()`），派生 `Circle` 和 `Rect`，
+用基类指针调用，验证多态。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <cassert>
+#include <cmath>
+
+class Shape {
+public:
+    virtual ~Shape() = default;
+    virtual double area() const = 0;   // ★ 纯虚函数 → Shape 是抽象类
+};
+
+class Circle : public Shape {
+    double r_;
+public:
+    explicit Circle(double r) : r_(r) {}
+    double area() const override { return 3.14159265 * r_ * r_; }
+};
+
+class Rect : public Shape {
+    double w_, h_;
+public:
+    Rect(double w, double h) : w_(w), h_(h) {}
+    double area() const override { return w_ * h_; }
+};
+
+int main() {
+    Circle c(1.0);
+    Rect   r(2.0, 3.0);
+    Shape* shapes[2] = { &c, &r };
+    for (Shape* s : shapes) printf("面积 = %.2f\n", s->area());  // 多态分发
+    assert(std::fabs(shapes[0]->area() - 3.14159265) < 0.01);
+    assert(std::fabs(shapes[1]->area() - 6.0) < 0.01);
+    printf("习题 11.2 通过\n");
+    return 0;
+}
+```
+
+> [!tip] 抽象类不能实例化
+> `Shape s;` 会编译报错——有纯虚函数的类是抽象类。
+> 本项目 `AndroidImgui` 就是这种"接口"，具体实现交给 `VulkanGraphics`（第 58 章）。
+
 ## 验收清单
 
 - [ ] 能把 C 的"结构体+函数"改写成一个 C++ 类（把 C 版 `player_damage(&p, 30)` 改成 `p.damage(30)`）
