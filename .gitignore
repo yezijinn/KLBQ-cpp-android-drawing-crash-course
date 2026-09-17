@@ -1,4 +1,4 @@
-# ===== 本地编辑器 / 工具配置（不进仓库）=====
+# ===== 本地编辑�?/ 工具配置（不进仓库）=====
 .obsidian/
 .vscode/
 .workbuddy/
@@ -23,12 +23,10 @@ obj/
 build/
 cmake-build-*/
 
-# ===== Python 缓存（工具脚本用得到）=====
+# ===== Python 缓存（工具脚本用得到�?====
 __pycache__/
 *.pyc
 
 # ===== 日志 / 临时文件 =====
 *.log
 tmp/
-_cctest/  
-_di/  
