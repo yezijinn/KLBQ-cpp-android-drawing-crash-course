@@ -336,6 +336,56 @@ mkdir -p myproject/{jni/{include/{Core,Platform,Render,Memory},src/{Core,Platfor
 >
 > 保留 `jni/` 里你的源码——重建只针对产物目录，别删源码。
 
+## 综合实战：搭建能一键构建的工程骨架（脱离指导，卷三收尾）
+
+> [!important] 独立完成
+> 从空目录开始，搭一个"改一行就能编、编完就能跑"的工程骨架。
+
+**业务需求**：搭出符合本卷规范的目录，并让 `make` 一键完成构建→推送→运行：
+
+```bash
+make            # 编译 + 推送 + 运行
+make build      # 只编译
+make push       # 只推送
+make clean      # 清产物
+```
+
+**接口骨架**：
+
+```makefile
+# Makefile
+NDK    := /c/dev/android-ndk-r27c
+TARGET := app
+PKG_DIR := /data/local/tmp
+
+all: build push run
+
+build:
+	# TODO: 调 ndk-build
+
+push: build
+	# TODO: adb push + chmod
+
+run: push
+	# TODO: adb shell 运行
+
+clean:
+	# TODO: ndk-build clean + 删设备旧文件
+
+.PHONY: all build push run clean
+```
+
+**自主实现要求**：
+
+| 要求 | 考察点 |
+|---|---|
+| 目录结构符合规范（include/ src/ 镜像）| 工程组织 |
+| Makefile 用变量集中定义路径 | 可维护性 |
+| `make` 一条命令跑完三步 | 自动化 |
+| 每步失败即停 | 健壮性 |
+
+**验收**：`make` 一条命令跑通；改一行源码后 `make` 重新编译。
+
 ## 验收清单
 
 - [ ] 能画出本项目的目录结构，并说出每个目录的作用（画 jni/include/src/libs/obj 并标注）

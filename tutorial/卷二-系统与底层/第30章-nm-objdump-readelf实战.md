@@ -399,6 +399,48 @@ addr2line -e crash -f -C 0x140001498
 > 即某处 `base + 0xa0` 里 base 是 0。查结构体定义，0xa0 处是哪个字段，
 > 就能反推是哪一步没判空。这是本项目最常见的崩溃模式（第 30、89 章）。
 
+## 综合实战：写一个"二进制体检"脚本（脱离指导，卷二收尾）
+
+> [!important] 独立完成
+> 综合卷二全部工具（nm/objdump/readelf/file/addr2line），写一个分析脚本。
+
+**业务需求**：`analyze.sh <可执行文件>` 一条命令输出该文件的完整画像：
+
+```bash
+./analyze.sh app
+# ==== 文件画像 ====
+# 类型:   ELF 64-bit ARM aarch64 (用 readelf -h)
+# 依赖:   liblog.so, libandroid.so (用 readelf -d | grep NEEDED)
+# 导出:   42 个符号 (用 nm -D)
+# 未定义: 18 个符号 (用 nm -u)
+# 最大函数: drawPlayer (2.3KB) (用 nm --size-sort -S)
+```
+
+**接口骨架**：
+
+```bash
+#!/bin/bash
+set -e
+BIN="$1"
+
+# 1. 文件类型
+# 2. NEEDED 依赖库列表（去重计数）
+# 3. 导出符号数（nm -D | grep ' T ' | wc -l）
+# 4. 未定义符号数（nm -u | wc -l）
+# 5. 最大的 5 个函数（nm --size-sort -S | tail -5）
+```
+
+**自主实现要求**：
+
+| 要求 | 考察点 |
+|---|---|
+| 用 `readelf -h` 判断架构 | 工具用法 |
+| 依赖库去重计数 | 文本处理 |
+| 分别统计 `T`（导出）和 `U`（未定义）| 符号表理解 |
+| 输出对齐、可读 | 工程化 |
+
+**验收**：对任意 ELF 文件运行，5 项信息齐全且正确。
+
 ## 验收清单
 
 - [ ] 会用 `nm -C -D` 查符号，`nm -u` 查依赖（对某 .so 跑两条命令，读出导出符号和未定义符号）
