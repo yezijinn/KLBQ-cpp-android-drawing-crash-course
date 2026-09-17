@@ -188,16 +188,16 @@ adb shell cat /data/tombstones/tombstone_00 | head -40
 
 ```bash
 #!/bin/bash
-set -e
+# 注意：不用 set -e，而是每个关键步骤手动判错（见下方"两个坑"）
 
 TARGET=hello_arm64
 REMOTE=/data/local/tmp/$TARGET
 
 echo "==> 编译"
-ndk-build -j8
+ndk-build -j8 || { echo "编译失败，终止"; exit 1; }
 
 echo "==> 推送"
-adb push libs/arm64-v8a/$TARGET $REMOTE
+adb push libs/arm64-v8a/$TARGET $REMOTE || { echo "推送失败（设备连接？）"; exit 1; }
 adb shell chmod 755 $REMOTE
 
 echo "==> 清日志"
@@ -209,6 +209,20 @@ adb shell $REMOTE
 echo "==> 日志"
 adb logcat -d -s HelloNDK | tail -20
 ```
+
+> [!danger] 这个脚本有 2 个坑，用在长程序上会踩
+> **坑 1：`set -e` 让错误无输出**
+> 原版用 `set -e`，`adb push` 失败时脚本直接退出，你**看不到任何提示**。
+> 上面已改成显式判错（`|| { echo ...; exit 1; }`）。
+>
+> **坑 2：`adb shell $REMOTE` 对长期程序会卡住**
+> 本章的 hello 跑完就退，没问题。但第 66 章的 overlay 是**常驻程序**，
+> 这一行会永远阻塞。应该后台运行：
+> ```bash
+> adb shell "nohup $REMOTE > /dev/null 2>&1 &"
+> sleep 3                  # 等它启动（复杂程序需 3~5 秒）
+> adb logcat -d -s HelloNDK | tail -20
+> ```
 
 **Windows（批处理）** `run.bat`：
 
