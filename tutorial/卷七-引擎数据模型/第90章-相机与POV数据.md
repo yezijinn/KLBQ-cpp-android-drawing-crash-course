@@ -283,6 +283,11 @@ struct PlayerController {
 > 开镜/切换武器时 FOV 会变。缓存会导致 W2S 偏移，ESP 框"飘"。
 > 本项目每帧重读 FOV（第 90、91 章）。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道 ControlRotation 与 CameraCache/POV 的区别（说出"逻辑朝向 vs 实际渲染朝向"）

@@ -327,6 +327,11 @@ adb shell settings put system pointer_location 1
 > [!danger] 需要 root
 > 开 `/dev/uinput` 一般需要 root 权限。本项目把触摸转发做成可选功能（第 70 章）。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道 uinput 是"用户态创建虚拟输入设备"的机制（说出"内核给一个 /dev/uinput 接口"）

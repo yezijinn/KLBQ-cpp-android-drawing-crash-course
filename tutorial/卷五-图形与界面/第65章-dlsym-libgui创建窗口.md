@@ -331,6 +331,11 @@ int main(void) {
 > [!warning] 只能在原生可执行文件里做
 > App（.so）在 Android 7+ 无法 dlopen libgui（linker namespace 限制），第 32 章讲过。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道三条创建图层路径的差别（Java/NDK/dlsym libgui，各说一句）

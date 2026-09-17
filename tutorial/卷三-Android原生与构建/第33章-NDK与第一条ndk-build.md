@@ -379,6 +379,11 @@ debug 版会明显更大（带调试信息），且可以用 `addr2line` 精确�
 > clang 找不到 → PATH 或路径写错；push 后不能执行 → 忘了 `chmod 755`；
 > `No such file` 但文件在 → `/sdcard` 是 noexec，换 `/data/local/tmp`。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] NDK 装好，`ndk-build --version` 能输出（看到 GNU Make 版本号）

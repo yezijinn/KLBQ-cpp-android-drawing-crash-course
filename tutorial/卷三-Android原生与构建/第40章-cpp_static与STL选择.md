@@ -222,6 +222,11 @@ aarch64-linux-android-readelf -d app_shared | grep NEEDED
 - [ ] **对比大小**：`c++_static` 单文件更大，`c++_shared` 需额外带 `libc++_shared.so`
 - [ ] **验证依赖**：`readelf -d app | grep NEEDED` → shared 版会列出 `libc++_shared.so`
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道 libc++ 是 NDK 的 STL 实现（说出命名空间 std::__ndk1）

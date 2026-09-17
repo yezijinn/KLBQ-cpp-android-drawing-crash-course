@@ -313,6 +313,11 @@ include $(BUILD_EXECUTABLE)
 > [!warning] 4 个核心 .cpp 缺一不可
 > 少了 `imgui_draw`/`imgui_tables`/`imgui_widgets` 任一 → `undefined reference`。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道 ImGui 必需的 5 个 .cpp 和它们的分工（imgui/draw/tables/widgets/impl_vulkan 各管什么）

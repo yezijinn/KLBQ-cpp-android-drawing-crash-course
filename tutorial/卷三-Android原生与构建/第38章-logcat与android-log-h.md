@@ -413,6 +413,11 @@ for (int i = 0; i < 100; i++) LOGI_THROTTLE("Test", "第 %d 次", i);
 | `static` 保证每处调用独立 | 不同调用点互不影响 |
 | 间隔可配置 | 改 `minIntervalMs` 生效 |
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道 `__android_log_print` 的参数和 5 个优先级（prio/tag/fmt/...，V/D/I/W/E）

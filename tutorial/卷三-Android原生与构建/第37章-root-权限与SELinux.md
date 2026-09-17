@@ -288,6 +288,11 @@ adb shell su -c dmesg | grep avc | tail -3
 > 有些定制 ROM 出厂就是 `Permissive`。不记录就 `setenforce 1` 会**意外打开** SELinux。
 > 不确定就 `adb reboot`——`setenforce` 不写盘，重启即回默认。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 能说出 Android 的三层权限关卡（DAC → Capabilities → SELinux）

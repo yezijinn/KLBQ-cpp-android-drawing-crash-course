@@ -354,6 +354,11 @@ adb shell dumpsys SurfaceFlinger | grep -i 'hwc\|max layers'
 > [!note] 透明来自两处，不是 compositeAlpha
 > 本项目用 OPAQUE/INHERIT，透明靠"图层 RGBA + 每帧清屏 alpha=0"。别以为要设 POST_MULTIPLIED。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道屏幕画面是多个图层合成的（说出状态栏/导航栏/App 各是图层）

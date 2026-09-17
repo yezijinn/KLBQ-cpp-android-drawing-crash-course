@@ -372,6 +372,11 @@ adb shell /data/local/tmp/embree_demo
 > [!warning] 手机上必须限制线程数
 > 默认会用满所有核心，在手机上可能导致线程爆炸。本项目设 `threads` 上限。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道四个核心对象的关系（Device/Scene/Geometry/Buffer，画出层级）

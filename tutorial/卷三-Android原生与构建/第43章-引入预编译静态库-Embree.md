@@ -340,6 +340,11 @@ Embree 的 6 个库也是同样的道理，只是数量多、顺序有讲究。
 > [!danger] 顺序错了会满屏 undefined reference
 > 若确实顺序正确还报错，用 `-Wl,--start-group ... --end-group` 包住，或 `nm -u libembree4.a` 查它还需要什么。
 
+## 本章小结
+
+> [!abstract] 本章要点已收束
+> 回头把本页的"动手"与结论串成一句话；有勾不上的验收项，回去补做。
+
 ## 验收清单
 
 - [ ] 知道 Embree 是干什么的（BVH + 光线求交）（说出"构建 BVH，回答射线撞到什么"）
