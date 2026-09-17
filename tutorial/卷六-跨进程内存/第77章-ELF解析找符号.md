@@ -306,6 +306,19 @@ int main(int argc, char **argv) {
 如果能找到，说明解析正确。再试试找一个游戏库的内部符号——大概率找不到，
 **这正好验证了"strip 后符号解析失效"这一结论**。
 
+## 动手验证清单
+
+- [ ] **找 PT_DYNAMIC**：遍历程序头，找到 `p_type == PT_DYNAMIC` 的段
+- [ ] **解析 Dyn 数组**：取 `DT_SYMTAB`（符号表）、`DT_STRTAB`（字符串表）地址
+- [ ] **遍历符号表**：逐个读 `Elf64_Sym`，用 `st_name` 索引字符串表比对名字
+- [ ] **算真实地址**：`真实地址 = 模块基址 + st_value`
+- [ ] **找 libc 符号**：`./symfind <pid> libc.so printf` → 查到地址
+- [ ] **验证 strip 影响**：对 strip 过的库 → 内部符号查不到（只剩 `.dynsym`）
+
+> [!warning] strip 后只剩动态符号
+> 发布版本通常 strip 过，`nm` 显示 `no symbols`。此时只能查 `.dynsym`（导出符号），
+> 内部全局变量通常不在里面（第 19、77 章）。
+
 ## 验收清单
 
 - [ ] 知道解析五步：ELF头 → PT_DYNAMIC → Dyn 键值对 → 符号表/字符串表 → 遍历（复述五步）
