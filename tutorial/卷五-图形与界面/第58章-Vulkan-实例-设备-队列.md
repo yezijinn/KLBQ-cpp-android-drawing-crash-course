@@ -382,6 +382,15 @@ int main(void) {
 > [!note] 每个结构体都要填 `sType`
 > 忘填会得到 `VK_ERROR_VALIDATION_FAILED` 或直接崩。这是 Vulkan 最常见的低级错误。
 
+## 常见坑排查表
+
+| 症状 | 最可能的原因 | 解法 |
+|---|---|---|
+| `vkCreateInstance` 返回失败 | 扩展没启用或 `sType` 没填 | 填全所有结构体的 `sType` |
+| 找不到物理设备 | 设备不支持 Vulkan | 确认设备支持（第 60 章检查）|
+| `vkCreateDevice` 失败 | 请求了不支持的队列族 | 先枚举队列族，选支持的 |
+| 程序退出时**验证层报错** | 对象没按逆序销毁 | 创建的逆序销毁 |
+
 ## 验收清单
 
 - [ ] 知道五个核心对象的层级关系（Instance → PhysicalDevice → Device → Queue，画出层级）
