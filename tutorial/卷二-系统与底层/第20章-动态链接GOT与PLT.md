@@ -218,6 +218,39 @@ C++ 为了支持重载，把函数名、参数类型编码进符号名（第 65 
 > `libgui.so`、`libutils.so` 属于"灰名单"库，普通 App 的 `dlopen` 会被拒绝。
 > 但**原生可执行文件不受此限制**——这正是本项目选择做成可执行文件而非 APK 的原因之一（第 32 章）。
 
+## 课后习题
+
+### 习题 20.1 用 readelf 查依赖与动态符号（★）
+
+**要求**：对一个 `.so` 文件，用 `readelf` 查出它依赖哪些库、导出了哪些符号。
+
+**参考实现**：
+
+```bash
+# 查依赖哪些库（NEEDED）
+readelf -d libfoo.so | grep NEEDED
+# 输出示例：
+#   0x00000001 (NEEDED)  Shared library: [liblog.so]
+#   0x00000001 (NEEDED)  Shared library: [libc.so]
+
+# 查导出的动态符号
+readelf --dyn-syms libfoo.so | head
+```
+
+> [!note] 为什么看 NEEDED
+> 程序在设备上报 `library "libxxx.so" not found` 时，用 `readelf -d | grep NEEDED`
+> 就能确认它到底依赖什么（第 30 章实战）。
+
+### 习题 20.2 理解延迟绑定（★★，概念题）
+
+**要求**：说出第一次调用 `printf` 和第二次调用分别发生了什么。
+
+> [!question]- 参考答案
+> **第一次**：`call printf@plt` → PLT 跳到 GOT，GOT 此时指向"解析桩"，
+> 于是调用 `_dl_runtime_resolve`，动态链接器查 `libc` 符号表找到 `printf` 真实地址，**写回 GOT**。
+> **第二次**：PLT 跳 GOT，GOT 已经是真实地址，**直接跳过去**，无额外开销。
+> 这就是"延迟绑定"——不用的函数永远不会被解析。
+
 ## 验收清单
 
 - [ ] 能解释为什么 `call printf` 在编译时填不了地址（说出"libc 基址每次不同，ASLR"）
