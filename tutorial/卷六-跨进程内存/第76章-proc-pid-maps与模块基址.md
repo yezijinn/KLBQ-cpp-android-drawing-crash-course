@@ -197,7 +197,13 @@ std::vector<std::pair<uintptr_t, uintptr_t>> GetScanRegions() override {
 }
 ```
 
-## 完整 memview
+## memview 主程序
+
+> [!warning] 下面的代码用到三个函数，它们定义在本章前面
+> `ParseMaps()`（第 60 行附近）、`FindModuleBase()`（第 100 行附近）、
+> `GetScannableRegions()`（第 161 行附近）。
+> **要编译，得把这三段函数复制到 `struct MapRegion` 下方**，
+> 或者直接看附录 I / 附录 E 里整合好的完整文件。
 
 ```cpp
 // memview.cpp
@@ -209,7 +215,16 @@ std::vector<std::pair<uintptr_t, uintptr_t>> GetScanRegions() override {
 #include <fstream>
 #include <sstream>
 
-struct MapRegion { /* 同上 */ };
+struct MapRegion {
+    uint64_t start;
+    uint64_t end;
+    uint8_t  perms;        // 位: 1=R 2=W 4=X
+    bool     isPrivate;
+    uint64_t offset;
+    uint32_t devMajor, devMinor;
+    uint64_t inode;
+    std::string path;
+};
 
 std::vector<MapRegion> g_maps;
 
@@ -271,7 +286,7 @@ int main(int argc, char **argv) {
 编译运行：
 
 ```bash
-gcc -std=c++17 memview.cpp -o memview
+g++ -std=c++17 memview.cpp -o memview    # 注意用 g++（代码用了 vector/string/ifstream）
 ./memview <pid>
 ./memview <pid> libc.so
 ```
