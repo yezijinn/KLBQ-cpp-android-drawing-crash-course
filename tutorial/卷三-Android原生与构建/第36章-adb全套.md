@@ -760,6 +760,13 @@ adb shell ls -ld /data/local/tmp
 - [ ] **dumpsys**：`adb shell dumpsys display | head -20` → 看到显示信息
 - [ ] **体检脚本**：写脚本采集上述信息 → 存成 `device_info.txt`
 
+## 本章小结
+
+> [!abstract] 一句话回顾
+> **adb 是设备的"远程控制台"：连设备、传文件、看进程、抓日志、模拟输入，一套命令全搞定。**
+
+**高频命令速记**：`adb devices`（连）/ `push`·`pull`（传）/ `shell ps`（进程）/ `logcat`（日志）/ `dumpsys`（系统信息）/ `input`（模拟）。
+
 ## 验收清单
 
 - [ ] 会用 `adb devices` / `-s` 管理多设备（列出设备，用 -s 指定）
