@@ -14,6 +14,10 @@ aliases: [ch70]
 > 上一章看清了触摸链路。
 > 本章学**主动注入触摸**——用 `/dev/uinput` 创建虚拟输入设备（自瞄点屏幕靠它）。
 
+> [!important] 前置条件
+> - 需要 **root 设备** + 内核开了 `CONFIG_INPUT_UINPUT`（多数定制内核默认开）。
+> - 先确认：`adb shell su -c 'ls -l /dev/uinput'`，有该节点才能做。
+
 ## 先看 uinput 是什么
 
 `uinput`（user input）是内核提供的机制：

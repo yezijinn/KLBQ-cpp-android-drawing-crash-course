@@ -14,6 +14,10 @@ aliases: [ch62]
 > 上一章理解了 `ImDrawList` 装了什么。
 > 本章看**后端怎么把它变成 GPU 三角形**——从 DrawData 到绘制命令的每一步。
 
+> [!important] 前置条件
+> - 第 58/59 章的 Vulkan 初始化已完成。
+> - 本章有 **CPU 渲染后端实验**，可在本机跑（不依赖设备），用来验证三角形生成正确。
+
 ## 先看后端要做的六件事
 
 `ImGui_ImplVulkan_RenderDrawData(draw_data, cmd_buffer)` 内部：

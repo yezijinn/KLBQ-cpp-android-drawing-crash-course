@@ -14,6 +14,10 @@ aliases: [ch61]
 > 前几章讲 Vulkan（怎么把三角形送进 GPU）。
 > 本章讲 **ImGui**——本项目用"立即模式 UI"生成那些三角形。
 
+> [!important] 前置条件
+> - 已按第 42 章把 ImGui 源码放进 `jni/src/ImGui/`。
+> - 本章的 `ImDrawList` 实验可**在本机编译验证**（打印顶点数），无需设备。
+
 ## 先看两种 UI 范式
 
 ### 保留模式（Retained Mode）
