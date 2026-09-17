@@ -270,7 +270,7 @@ private:
 };
 ```
 
-> [!note] 上面用到的可变参数机制（`va_list` 等）**
+> [!note] 上面用到的可变参数机制（`va_list` 等）
 > 想让函数像 `printf` 一样"参数个数不定"，要用这套：
 > - `void write(const char *fmt, ...)`：`...` 表示"后面还可以接任意个参数"
 > - `va_list ap; va_start(ap, fmt);`：开始遍历可变参数

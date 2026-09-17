@@ -208,7 +208,7 @@ adb shell "su -c 'echo \$UID'"                # root 的 uid（有 root 才行�
 
 **C. 看看能不能加载私有库**
 
-> [!note] `dlopen` / `dlsym` 是"运行时加载动态库"（第 65 章详讲）**
+> [!note] `dlopen` / `dlsym` 是"运行时加载动态库"（第 65 章详讲）
 > - `dlopen("libxxx.so", 标志)`：**在运行时打开一个 .so**，返回它的句柄
 > - `dlsym(句柄, "符号名")`：**从库里找到某个函数/变量的地址**
 > - `dlerror()`：取最近一次 `dlopen`/`dlsym` 的错误信息
