@@ -12,6 +12,16 @@ aliases: [ch35]
 
 ## 先看完整的一轮流程
 
+> [!important] 前提：在工程根目录执行
+> 下面的 `ndk-build` 和 `libs/arm64-v8a/` 都相对于**工程根目录**——
+> 就是含 `jni/` 子目录的那个文件夹（第 33 章建的 `hello_ndk/`）。
+> 执行前先确认：
+> ```bash
+> pwd            # 应显示 .../hello_ndk
+> ls             # 应看到 jni/（构建后还会出现 libs/ 和 obj/）
+> ```
+> 不在这个目录会报 `Android NDK: Could not find application project directory`。
+
 ```bash
 # 1. 编译
 ndk-build -j8
