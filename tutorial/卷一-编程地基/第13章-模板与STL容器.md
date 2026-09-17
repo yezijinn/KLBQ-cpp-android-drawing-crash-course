@@ -806,6 +806,7 @@ int main() {
 ```cpp
 #include <cstdio>
 #include <string_view>
+#include <string>      // std::string
 #include <cassert>
 
 bool starts_with(std::string_view s, std::string_view prefix) {
