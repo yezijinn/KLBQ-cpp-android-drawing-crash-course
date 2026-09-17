@@ -10,6 +10,10 @@ aliases: [ch34]
 > 把 KLBQ 的两个 `.mk` 文件每一行都讲透，并学会四种常见改造场景。
 > 第 29 章讲语法，本章讲实战。
 
+> [!note] 承上
+> 上一章用 `ndk-build` 编出了第一个程序。
+> 本章把背后的两个构建脚本——**`Android.mk` 和 `Application.mk`**——逐行讲透。
+
 ## 完整的 Android.mk
 
 ```makefile

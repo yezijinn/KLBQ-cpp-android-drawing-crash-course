@@ -10,6 +10,10 @@ aliases: [ch36]
 > 掌握 adb 的完整命令集，能把设备当成一台"远程 Linux 机器"来操作。
 > 后面所有章节的调试都建立在这些命令上。
 
+> [!note] 承上
+> 上一章用了 `adb push`/`chmod`/`logcat`。
+> 本章把 **adb 的完整命令集**一次讲透——以后调试全靠它。
+
 ## 第 0 步：装 platform-tools（便携包 → `C:\dev`）
 
 adb **不是一个单独的程序**，它属于 Google 的 **platform-tools** 包，官方只提供 zip 压缩包：

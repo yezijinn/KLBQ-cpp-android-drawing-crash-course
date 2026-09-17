@@ -10,6 +10,10 @@ aliases: [ch37]
 > 理解 Android 的三层权限关卡（UID / capability / SELinux），
 > 知道为什么"明明是 root 还是被拒"。
 
+> [!note] 承上
+> 上一章掌握 adb 后，你会发现有些操作**即使 root 也被拒**。
+> 本章揭开 Android 的**三层权限关卡**：DAC / Capabilities / SELinux。
+
 ## 先看一个令人困惑的现象
 
 ```bash

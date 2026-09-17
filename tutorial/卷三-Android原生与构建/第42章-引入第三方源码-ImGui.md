@@ -10,6 +10,10 @@ aliases: [ch42]
 > 学会把"源码形式的第三方库"塞进 ndk-build 工程，并跑通第一个 ImGui 程序。
 > 本项目 `jni/src/ImGui/` 下有 **10 个 .cpp**：ImGui 核心 5 个（`imgui` / `imgui_draw` / `imgui_tables` / `imgui_widgets` / `imgui_impl_vulkan`）+ 本项目自己的 5 个（Android 适配、字体、触摸、stb 等），就是这么来的。
 
+> [!note] 承上
+> 前几章都是"自己写代码"。
+> 本章开始引入第三方库——先是**源码形式**的 ImGui（它提供 UI，卷五会大量用到）。
+
 ## 先看 ImGui 需要哪些文件
 
 Dear ImGui 的核心只有几个文件：
