@@ -332,6 +332,53 @@ void PrintDrawData(ImDrawData *dd) {
 | 界面**错位/重叠** | 坐标用了世界坐标 | ImGui 用**屏幕坐标** |
 | 文字不显示 | 字体图集没加载 | 先 `AddFont` + `Build` 再 `NewFrame` |
 
+## 动手演练：真实功能扩展 —— 新增一种绘制元素
+
+### 【业务需求场景描述】
+
+项目目前画方框 / 骨骼线 / 文字。现在要新增一种 **"带填充的血条"**（真实 ESP 常见元素）：在方框上方画一条水平条，绿色部分表示血量百分比。要求封装成可复用函数。
+
+### 【修改或扩展的文件列表提示】
+
+| 文件 | 操作 |
+|---|---|
+| `src/Android_draw/draw_Gui.cpp` | 修改：`DrawPlayer()` 里调用新函数 |
+| 你练习项目的 `DrawExt.h` | **新建**：绘制扩展元素 |
+
+### 【扩展接口契约骨架代码】
+
+```cpp
+// DrawExt.h —— 扩展绘制元素
+#pragma once
+#include "imgui.h"
+
+// 画血条：x,y 是左上角，w 是宽度，hpRatio ∈ [0,1]
+inline void DrawHealthBar(ImDrawList* draw, float x, float y, float w,
+                          float hpRatio, float thickness = 4.0f) {
+    // TODO 1: 背景条（灰色实心矩形）
+    //   draw->AddRectFilled({x, y}, {x + w, y + thickness}, 灰)
+    // TODO 2: 血量条（按 hpRatio 宽度，绿色）
+    //   注意：hpRatio 要 clamp 到 [0,1]
+    // TODO 3: 边框（可选，黑色描边）
+}
+```
+
+### 【自测验证断言与验收标准】
+
+```cpp
+// 在 DrawPlayer 里：
+ImVec2 pos = ImVec2(boxX, boxTop - 25.0f);
+float hpRatio = hp / maxHp;
+DrawHealthBar(draw, pos.x, pos.y, boxWidth, hpRatio);
+```
+
+| 验收项 | 标准 |
+|---|---|
+| 血条显示在方框上方 | 位置正确 |
+| 绿色部分随血量变化 | 满血全绿、半血半绿 |
+| `hpRatio` 越界不崩 | clamp 到 [0,1] |
+| 封装成函数（非内联写死）| 可在多处复用 |
+
 ## 验收清单
 
 - [ ] 能说出立即模式与保留模式的区别（说出"立即模式无控件对象、每帧重描述"）
