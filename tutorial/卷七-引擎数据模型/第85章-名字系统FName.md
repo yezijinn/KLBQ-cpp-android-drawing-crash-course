@@ -60,8 +60,13 @@ bit 31                    16 15              0
 
 ```cpp
 uint32_t blockIdx = nameId >> 16;       // 块索引
-uint32_t blockOff = nameId & 0xFFFF;    // 块内偏移（单位：条目）
+uint32_t blockOff = nameId & 0xFFFF;    // 块内偏移（单位见下方说明，不是"条目数"）
 ```
+
+> [!note] `blockOff` 的单位不是"条目个数"
+> 新手容易误以为 `blockOff` 是"跳过几个 FNameEntry"。
+> 实际它是"跳过几个 **2 字节单位**"（下面「blockOff * 2」一节会解释为什么）。
+> 所以从 `blockOff` 算真实地址时要 **× 2**，不能直接当条目数用。
 
 ## 名字池结构
 
