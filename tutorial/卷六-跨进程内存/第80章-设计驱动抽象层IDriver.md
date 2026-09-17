@@ -308,6 +308,7 @@ private:
 #include <cstring>
 #include <memory>
 #include <cassert>
+#include <cstdint>
 
 class IDriver {
 public:
