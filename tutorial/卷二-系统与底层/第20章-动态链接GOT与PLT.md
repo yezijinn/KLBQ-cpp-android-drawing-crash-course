@@ -224,6 +224,11 @@ C++ 为了支持重载，把函数名、参数类型编码进符号名（第 65 
 
 **要求**：对一个 `.so` 文件，用 `readelf` 查出它依赖哪些库、导出了哪些符号。
 
+**验证方式**（Linux/WSL）：
+1. 对一个有依赖的 `.so`（如 `/system/lib64/libgui.so` 或自己编的）跑 `readelf -d | grep NEEDED`，应列出若干 `[libxxx.so]`
+2. 跑 `readelf --dyn-syms | head`，应看到导出符号（`FUNC`/`OBJECT`）
+3. 交叉验证：`ldd <文件>`（Linux）列的依赖应与 `NEEDED` 一致
+
 **参考实现**：
 
 ```bash
