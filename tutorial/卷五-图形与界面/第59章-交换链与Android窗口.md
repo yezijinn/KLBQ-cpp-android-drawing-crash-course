@@ -379,6 +379,15 @@ for (auto& f : fmts)
 - [ ] **拿图像**：`vkGetSwapchainImagesKHR` → 确认图像数量
 - [ ] **画面显示**：清屏成某颜色 → 提交 → 屏幕上看到纯色（**这步要设备**）
 
+## 常见坑排查表
+
+| 症状 | 最可能的原因 | 解法 |
+|---|---|---|
+| `vkCreateSwapchainKHR` 失败 | surface 能力没查就直接建 | 先 `vkGetPhysicalDeviceSurfaceCapabilitiesKHR` |
+| 画面**纯黑** | 图像数或格式不对 | 用 surface 支持的格式（如 `R8G8B8A8_UNORM`）|
+| 提交后**画面不更新** | 没 `vkQueuePresentKHR` 或没等 fence | 确认每帧 `Acquire`→画→`Present` 完整 |
+| 黑屏一闪退出 | `vkAcquireNextImageKHR` 返回 `OUT_OF_DATE` | 重建交换链（窗口尺寸变了）|
+
 ## 验收清单
 
 - [ ] 理解交换链解决"撕裂"问题（双/三缓冲）（说出"一个显示、一个绘制"）
