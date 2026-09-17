@@ -322,6 +322,19 @@ adb logcat -d -s HelloNDK | tail -20
 
 用法：`./run.sh debug` 或 `./run.sh release`。
 
+## 动手验证清单
+
+- [ ] **编译**：`ndk-build -j8` → `libs/arm64-v8a/` 下出现产物
+- [ ] **推送**：`adb push libs/arm64-v8a/hello_arm64 /data/local/tmp/` → 显示传输速率
+- [ ] **赋权**：`adb shell chmod 755 /data/local/tmp/hello_arm64` → 无报错
+- [ ] **运行**：`adb shell /data/local/tmp/hello_arm64` → 输出 `hello from arm64`
+- [ ] **看日志**：另开终端 `adb logcat -s HelloNDK` → 看到自己打的 log
+- [ ] **一键脚本**：`./run.sh` → 一条命令跑完编译→推送→运行→抓日志
+- [ ] **制造一次崩溃**：故意访问空指针，在 logcat 找 `Fatal signal`
+
+> [!tip] 每次改代码后都走一遍这 5 步
+> 编译→推送→赋权→运行→看日志，这就是本教程后面一直用的工作流。
+
 ## 验收清单
 
 - [ ] 手机已连上，`adb devices` 显示 `device`（输出一行 xxx device）

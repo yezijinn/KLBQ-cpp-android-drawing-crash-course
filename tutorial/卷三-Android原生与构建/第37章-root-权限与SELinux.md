@@ -275,6 +275,19 @@ adb shell su -c dmesg | grep avc | tail -3
   └─ capability 够吗？ → /proc/self/status CapEff
 ```
 
+## 动手验证清单
+
+- [ ] **看当前模式**：`adb shell getenforce` → `Enforcing` 或 `Permissive`（**记下来**）
+- [ ] **制造 DAC 拒绝**：`adb shell cat /data/data/some_app/file` → `Permission denied`（无 avc）
+- [ ] **制造 SELinux 拒绝**：`adb shell su -c 'dmesg | grep avc'` → 看 `avc: denied` 日志
+- [ ] **临时诊断**（有 root）：`adb shell su -c setenforce 0` → 确认是不是 SELinux 拦的
+- [ ] **恢复**：按之前记录的状态 `setenforce 1`（或原本就是 Permissive 则不动）
+- [ ] **确认恢复**：`adb shell getenforce` → 与最初记录一致
+
+> [!danger] 关 SELinux 前必须记录原状态
+> 有些定制 ROM 出厂就是 `Permissive`。不记录就 `setenforce 1` 会**意外打开** SELinux。
+> 不确定就 `adb reboot`——`setenforce` 不写盘，重启即回默认。
+
 ## 验收清单
 
 - [ ] 能说出 Android 的三层权限关卡（DAC → Capabilities → SELinux）

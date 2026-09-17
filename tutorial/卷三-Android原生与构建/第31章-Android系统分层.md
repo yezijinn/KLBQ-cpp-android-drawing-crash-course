@@ -222,6 +222,22 @@ adb shell su -c id
 
 把这五条的输出记下来，后面章节都要用。
 
+
+## 动手验证清单
+
+按顺序执行，每步确认输出符合预期再往下：
+
+- [ ] **确认设备连接**：`adb devices` → 看到 `device` 状态（不是 `unauthorized`）
+- [ ] **查 Android 版本**：`adb shell getprop ro.build.version.release` → 如 `13`
+- [ ] **查 API 等级**：`adb shell getprop ro.build.version.sdk` → 如 `33`
+- [ ] **查 CPU 架构**：`adb shell getprop ro.product.cpu.abi` → 如 `arm64-v8a`
+- [ ] **看关键进程**：`adb shell ps -A | grep -E 'surfaceflinger|zygote|system_server'` → 三个都在
+- [ ] **看原生库**：`adb shell ls /system/lib64/ | head -20` → 能看到 `libgui.so` 等
+- [ ] **查 SELinux**：`adb shell getenforce` → `Enforcing` 或 `Permissive`
+
+> [!tip] 把 7 步输出记下来
+> 后面第 33、36、37、66 章都会用到（尤其 API 等级和架构）。
+
 ## 验收清单
 
 - [ ] 能画出 Android 五层结构，并说出本项目在哪一层（画五层图，标出"原生库层"）

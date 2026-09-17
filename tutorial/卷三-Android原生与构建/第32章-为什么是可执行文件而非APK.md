@@ -226,6 +226,18 @@ int main(void) {
 
 在独立可执行文件里能成功；如果放进 APK 的 .so 里就会失败。
 
+
+## 动手验证清单
+
+- [ ] **查身份**：`adb shell id` → 普通 shell 是 `uid=2000`
+- [ ] **试 root**：`adb shell su -c id` → 有 root 则 `uid=0(root)`，没有会报错（正常）
+- [ ] **查 App 沙箱**：`adb shell ps -A -o USER,NAME | grep u0_a` → 每个 App 一个独立 UID
+- [ ] **确认 `/sdcard` 不可执行**：`adb shell mount | grep sdcard` → 含 `noexec`
+- [ ] **编译 hello 并 push 运行**：见"动手：两种形态都试一次" → 看到 `hello from native`
+
+> [!note] 没有 root 设备
+> 第 2 步会失败，正常。`adb root`（userdebug）或直接跳过——卷一到卷四不需要 root。
+
 ## 验收清单
 
 - [ ] 能说出 APK+so 与独立可执行文件的 5 个差异（对照本章对比表，逐条复述）

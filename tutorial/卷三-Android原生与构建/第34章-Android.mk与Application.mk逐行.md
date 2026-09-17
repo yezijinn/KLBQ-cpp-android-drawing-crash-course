@@ -294,6 +294,14 @@ ndk-build -B
 再试一次：故意把 `LOCAL_SRC_FILES` 写成 `utils.c`（漏了 `src/`），
 看报什么错——这个错误你以后会经常遇到。
 
+## 动手验证清单
+
+- [ ] **读懂 `LOCAL_PATH`**：找到 `$(call my-dir)` → 指出它返回 `jni/` 目录
+- [ ] **数预编译库块**：`grep -c PREBUILT_STATIC_LIBRARY Android.mk` → 应为 6
+- [ ] **看模块名**：`grep LOCAL_MODULE Android.mk` → 看到 `embree_prebuilt` 等
+- [ ] **确认产物类型**：`grep BUILD_ Android.mk` → 末行是 `BUILD_EXECUTABLE`
+- [ ] **验证 c++20 生效**：`grep -n 'c++' Android.mk Application.mk` → 模块级 `c++20` 覆盖应用级 `c++17`
+
 ## 验收清单
 
 - [ ] 能解释本项目 `Android.mk` 每一段的作用（逐段说出 CLEAR_VARS/预编译库/主模块/链接 的作用）

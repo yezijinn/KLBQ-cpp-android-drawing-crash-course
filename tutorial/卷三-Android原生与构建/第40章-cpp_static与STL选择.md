@@ -215,6 +215,13 @@ aarch64-linux-android-readelf -d app_shared | grep NEEDED
 - 大小差多少？
 - `NEEDED` 列表差在哪？（动态版会多 `libc++_shared.so`）
 
+## 动手验证清单
+
+- [ ] **编 c++_static 版**：`ndk-build APP_STL=c++_static` → 记录产物大小
+- [ ] **编 c++_shared 版**：`ndk-build APP_STL=c++_shared` → 记录产物大小
+- [ ] **对比大小**：`c++_static` 单文件更大，`c++_shared` 需额外带 `libc++_shared.so`
+- [ ] **验证依赖**：`readelf -d app | grep NEEDED` → shared 版会列出 `libc++_shared.so`
+
 ## 验收清单
 
 - [ ] 知道 libc++ 是 NDK 的 STL 实现（说出命名空间 std::__ndk1）

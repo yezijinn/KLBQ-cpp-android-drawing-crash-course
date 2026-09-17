@@ -301,6 +301,18 @@ include $(BUILD_EXECUTABLE)
 
 推到手机跑，观察输出的顶点数——这就是第 62 章要渲染的数据。
 
+## 动手验证清单
+
+- [ ] **准备目录**：按本章规划建 `include/ImGui/` 和 `src/ImGui/`
+- [ ] **放入核心文件**：`imgui.cpp` + `imgui_draw.cpp` + `imgui_tables.cpp` + `imgui_widgets.cpp`
+- [ ] **加头文件路径**：`LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/ImGui`
+- [ ] **加宏**：`-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES -DIMGUI_DISABLE_DEBUG_TOOLS`
+- [ ] **编译**：`ndk-build` → 无 `undefined reference`（5 个 .cpp 都链上）
+- [ ] **验证裁剪**：`grep -c 'imgui_demo' Android.mk` → 应为 0（没引入 demo）
+
+> [!warning] 4 个核心 .cpp 缺一不可
+> 少了 `imgui_draw`/`imgui_tables`/`imgui_widgets` 任一 → `undefined reference`。
+
 ## 验收清单
 
 - [ ] 知道 ImGui 必需的 5 个 .cpp 和它们的分工（imgui/draw/tables/widgets/impl_vulkan 各管什么）

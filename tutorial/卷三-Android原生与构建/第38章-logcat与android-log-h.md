@@ -355,6 +355,14 @@ for (int i = 0; i < 100; i++)
 // 应只输出 10 条
 ```
 
+## 动手验证清单
+
+- [ ] **写一个日志宏**：定义 `LOGI`/`LOGE`，编译进程序
+- [ ] **看分级输出**：`adb logcat -s 你的TAG` → 只看到自己 tag 的日志
+- [ ] **验证级别过滤**：`adb logcat 你的TAG:D *:S` → 只显示 D 及以上
+- [ ] **验证 NDEBUG 裁剪**：加 `-DNDEBUG` 编译 → 调试日志消失
+- [ ] **安全打印 string_view**：用 `%.*s` + `(int)sv.size(), sv.data()` → 不乱码
+
 ## 验收清单
 
 - [ ] 知道 `__android_log_print` 的参数和 5 个优先级（prio/tag/fmt/...，V/D/I/W/E）

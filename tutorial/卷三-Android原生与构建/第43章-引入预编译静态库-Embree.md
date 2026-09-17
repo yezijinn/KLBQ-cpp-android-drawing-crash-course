@@ -328,6 +328,18 @@ cp libmylib.a jni/include/Mine/
 体会"少了库 → undefined reference → 补上"的完整流程。
 Embree 的 6 个库也是同样的道理，只是数量多、顺序有讲究。
 
+## 动手验证清单
+
+- [ ] **确认 6 个 .a 都在**：`ls include/Embree/*.a` → 6 个文件
+- [ ] **声明预编译库**：`Android.mk` 里 6 个 `PREBUILT_STATIC_LIBRARY` 块
+- [ ] **按序引用**：`LOCAL_STATIC_LIBRARIES` 里 simd 在最后（被依赖的放右边）
+- [ ] **编译**：`ndk-build` → 无满屏 `undefined reference`
+- [ ] **故意打乱顺序**：把 embree4 移到最右 → 观察链接失败
+- [ ] **恢复正确顺序**：embree4 → lexers → math → sys → task → simd
+
+> [!danger] 顺序错了会满屏 undefined reference
+> 若确实顺序正确还报错，用 `-Wl,--start-group ... --end-group` 包住，或 `nm -u libembree4.a` 查它还需要什么。
+
 ## 验收清单
 
 - [ ] 知道 Embree 是干什么的（BVH + 光线求交）（说出"构建 BVH，回答射线撞到什么"）

@@ -361,6 +361,21 @@ debug 版会明显更大（带调试信息），且可以用 `addr2line` 精确�
 再试试：故意在 `hello.c` 里写个越界，用 debug 版复现崩溃，
 用 `aarch64-linux-android-addr2line` 定位到行号。
 
+
+## 动手验证清单
+
+- [ ] **装好 NDK**：`export NDK=/c/dev/android-ndk-r27c && ls $NDK/ndk-build.cmd` → 文件存在
+- [ ] **验证 clang**：`$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android21-clang --version` → 打印版本
+- [ ] **路线 A 编译**：用 clang 编 `hello.c` → 得到 `hello_arm64`
+- [ ] **确认架构**：`file hello_arm64` → 显示 `ARM aarch64`
+- [ ] **push 并运行**：`adb push hello_arm64 /data/local/tmp/ && adb shell chmod 755 /data/local/tmp/hello_arm64 && adb shell /data/local/tmp/hello_arm64` → 输出 `hello from arm64`
+- [ ] **路线 B 编译**：`ndk-build -j8` → `libs/arm64-v8a/` 下出现产物
+- [ ] **看完整命令**：`ndk-build V=1` → 看到实际 gcc/clang 调用
+
+> [!warning] 常见卡点
+> clang 找不到 → PATH 或路径写错；push 后不能执行 → 忘了 `chmod 755`；
+> `No such file` 但文件在 → `/sdcard` 是 noexec，换 `/data/local/tmp`。
+
 ## 验收清单
 
 - [ ] NDK 装好，`ndk-build --version` 能输出（看到 GNU Make 版本号）

@@ -315,6 +315,19 @@ mkdir -p myproject/{jni/{include/{Core,Platform,Render,Memory},src/{Core,Platfor
 >
 > 这个工程就是后面 56 章的基础，别跳过。
 
+## 动手验证清单
+
+- [ ] **建镜像目录**：`include/` 与 `src/` 按功能分层（Vulkan/ImGui/Hack/My_Utils）
+- [ ] **放一份 .h + .cpp**：如 `include/My_Utils/X.h` ↔ `src/My_Utils/X.cpp`
+- [ ] **写 .gitignore**：排除 `libs/` `obj/`
+- [ ] **验证 git 忽略**：`git status` → 看不到 `libs/obj`
+- [ ] **编码统一**：确认源文件是 UTF-8 无 BOM（`file X.cpp`）
+- [ ] **一键脚本**：`scripts/build.sh` + `scripts/run.sh`
+- [ ] **完整构建**：从空目录按规范搭建并 `make` 成功
+
+> [!tip] 这个骨架就是卷四~卷八的工作目录
+> 第 44 章的综合练习产出，后面 56 章都在这个结构上继续加代码。
+
 ## 验收清单
 
 - [ ] 能画出本项目的目录结构，并说出每个目录的作用（画 jni/include/src/libs/obj 并标注）
