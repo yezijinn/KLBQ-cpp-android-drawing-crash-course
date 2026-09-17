@@ -10,6 +10,10 @@ aliases: [ch64]
 > 理解 Android 屏幕合成的完整机制，以及"图层"到底是什么。
 > 第 65 章直接用原生 API 创建图层。
 
+> [!note] 承上
+> 前几章在"应用内部"画图。
+> 本章走到**应用之外**——Android 的合成器 SurfaceFlinger 怎么把"图层"叠成屏幕。
+
 > [!important] 本章概念多，分三次读
 > 本章有 11 个新概念（SurfaceFlinger、BufferQueue、ANativeWindow、4 个 C++ 类、
 > layerStack、z-order、像素格式、HWC），一次啃完会晕。**按三层分批读**：

@@ -10,6 +10,10 @@ aliases: [ch65]
 > 理解为什么不用 SDK 也能创建图层，以及 C++ 符号名（mangled name）是怎么回事。
 > 这是 `ANativeWindowCreator.h` 的核心机制。
 
+> [!note] 承上
+> 上一章理解了"图层"。
+> 本章动手**创建图层**——不用 SDK，靠 `dlsym` 调 SurfaceFlinger 的私有 API。
+
 ## 先看三条路的差别
 
 | 方式 | 接口 | 限制 |

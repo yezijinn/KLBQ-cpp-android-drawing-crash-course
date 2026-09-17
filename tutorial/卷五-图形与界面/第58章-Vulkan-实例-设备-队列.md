@@ -10,6 +10,10 @@ aliases: [ch58]
 > 理解 Vulkan 的五个核心对象，能写出第一个能跑的 Vulkan 初始化。
 > 这是 `VulkanGraphics.cpp` 的骨架。
 
+> [!note] 承上
+> 上一章画了管线全景图。
+> 本章动手搭 Vulkan 的五个核心对象——这是 `VulkanGraphics.cpp` 的骨架。
+
 ## 先看 Vulkan 的对象层级
 
 ```

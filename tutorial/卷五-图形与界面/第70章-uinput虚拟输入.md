@@ -10,6 +10,10 @@ aliases: [ch70]
 > 学会用 `/dev/uinput` 创建一个虚拟触摸设备，并注入触摸事件。
 > 这是 `TouchHelperA.cpp` 后半部分的内容。
 
+> [!note] 承上
+> 上一章看清了触摸链路。
+> 本章学**主动注入触摸**——用 `/dev/uinput` 创建虚拟输入设备（自瞄点屏幕靠它）。
+
 ## 先看 uinput 是什么
 
 `uinput`（user input）是内核提供的机制：

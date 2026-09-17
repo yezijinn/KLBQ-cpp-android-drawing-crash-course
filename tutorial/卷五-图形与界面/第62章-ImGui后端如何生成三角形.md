@@ -10,6 +10,10 @@ aliases: [ch62]
 > 理解从 `ImDrawData` 到 GPU 三角形的每一步，
 > 并能写一个极简的 CPU 光栅化后端来验证。
 
+> [!note] 承上
+> 上一章理解了 `ImDrawList` 装了什么。
+> 本章看**后端怎么把它变成 GPU 三角形**——从 DrawData 到绘制命令的每一步。
+
 ## 先看后端要做的六件事
 
 `ImGui_ImplVulkan_RenderDrawData(draw_data, cmd_buffer)` 内部：
