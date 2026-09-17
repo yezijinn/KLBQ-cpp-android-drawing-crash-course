@@ -171,7 +171,10 @@ sp<SurfaceControl> sc = client->createSurface(
 
 // 3. 配置图层
 SurfaceComposerClient::Transaction t;
-t.setLayer(sc, INT_MAX - 1);              // 层级：最高
+// 真实项目：层级 = INT_MAX - (rand() % 1000)，即在最高层附近随机取，
+// 避免每次启动都撞同一个 z（ANativeWindowCreator.h 的 CreateSurface）
+int32_t layerLevel = INT_MAX - (rand() % 1000);
+t.setLayer(sc, layerLevel);
 t.setPosition(sc, 0, 0);
 t.setSize(sc, 1080, 2400);
 t.show(sc);
