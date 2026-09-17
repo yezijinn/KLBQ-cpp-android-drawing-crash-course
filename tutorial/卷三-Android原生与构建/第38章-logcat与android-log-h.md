@@ -363,6 +363,56 @@ for (int i = 0; i < 100; i++)
 - [ ] **验证 NDEBUG 裁剪**：加 `-DNDEBUG` 编译 → 调试日志消失
 - [ ] **安全打印 string_view**：用 `%.*s` + `(int)sv.size(), sv.data()` → 不乱码
 
+## 动手演练：真实功能扩展 —— 给日志加限频与等级开关
+
+### 【业务需求场景描述】
+
+每帧调用 `LOGI` 会淹没 logcat（一秒几十条）。真实项目用**限频宏**（同一 tag 每秒最多打 N 条）。**你来实现**：限频 + 运行时等级开关。
+
+### 【修改或扩展的文件列表提示】
+
+| 文件 | 操作 |
+|---|---|
+| `include/My_Utils/Log.h` | **新建**：限频日志宏 |
+
+### 【扩展接口契约骨架代码】
+
+```cpp
+// Log.h —— 带限频的日志
+#pragma once
+#include <android/log.h>
+#include <chrono>
+#include <atomic>
+
+struct RateLimiter {
+    std::atomic<long long> lastMs{0};
+    int minIntervalMs;   // 同一 tag 两次日志最小间隔
+    bool ok() {
+        // TODO: 用 steady_clock 算当前 ms，与 lastMs 比较
+        // 达到间隔才返回 true 并更新 lastMs
+    }
+};
+
+// 限频日志宏（每秒最多一条）
+#define LOGI_THROTTLE(tag, ...) do { \
+    static RateLimiter _rl{1000}; \
+    if (_rl.ok()) __android_log_print(ANDROID_LOG_INFO, tag, __VA_ARGS__); \
+} while(0)
+```
+
+### 【自测验证断言与验收标准】
+
+```cpp
+for (int i = 0; i < 100; i++) LOGI_THROTTLE("Test", "第 %d 次", i);
+// 1 秒内只打一条（而非 100 条）
+```
+
+| 验收项 | 标准 |
+|---|---|
+| 限频生效 | 1 秒内同 tag 只 1 条 |
+| `static` 保证每处调用独立 | 不同调用点互不影响 |
+| 间隔可配置 | 改 `minIntervalMs` 生效 |
+
 ## 验收清单
 
 - [ ] 知道 `__android_log_print` 的参数和 5 个优先级（prio/tag/fmt/...，V/D/I/W/E）
