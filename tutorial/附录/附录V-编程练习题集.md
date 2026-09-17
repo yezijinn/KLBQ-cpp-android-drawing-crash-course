@@ -102,7 +102,10 @@ struct Mixed {
 >        offsetof(struct Mixed,e), sizeof(struct Mixed));
 > // 0 8 16 20 24 32
 > ```
-> **重排优化**：把字段按大小降序排（`double; int; short; char; char;`）总大小降到 24。
+> **重排优化**：把字段按大小降序排（`double; int; short; char; char;`）——
+> `b(0-7) d(8-11) c(12-13) a(14) e(15)`，字段合计 16 字节，
+> 16 已是 8 的倍数，**总大小 = 16**（不是 24）。
+> 对比原来的 32 字节，**省了一半**。
 
 ### 题 1.3 指针链跟随（★★）
 

@@ -58,8 +58,18 @@ aliases: [ch33]
 > [!danger] 路径不要有中文和空格
 > `C:\dev\android-ndk-r27c` 可以。
 > `C:\开发工具\NDK` 会在后续构建时随机失败。
-> 注意 NDK 解压后**目录名必须保持 `android-ndk-r27c` 这个形式**（含版本号），
-> 因为 `ndk-build` 内部会按这个命名规则推导 `toolchains` 的位置。
+>
+> **目录名必须和你的 NDK 版本号一致**。本教程以 **r27c** 为例，
+> 但官网最新版可能已是 r28、r29。对照表：
+>
+> | 你下载的 | 解压目录应该是 | 后续命令里的 NDK 路径 |
+> |---|---|---|
+> | `android-ndk-r27c-windows.zip` | `C:\dev\android-ndk-r27c` | `/c/dev/android-ndk-r27c` |
+> | `android-ndk-r28-windows.zip` | `C:\dev\android-ndk-r28` | `/c/dev/android-ndk-r28` |
+> | `android-ndk-r25c-windows.zip` | `C:\dev\android-ndk-r25c` | `/c/dev/android-ndk-r25c` |
+>
+> 本教程后面所有 `export NDK=/c/dev/android-ndk-r27c` 里的 **`r27c` 都要换成你的版本号**。
+> **建议**：为省事就下 r27c，与教程完全一致。
 
 NDK 目录结构（重要的几个）：
 

@@ -125,9 +125,18 @@ adb shell getenforce
 切换（需 root）：
 
 ```bash
+adb shell getenforce              # ★ 先记录当前状态！可能是 Enforcing 或 Permissive
 adb shell su -c setenforce 0      # 临时关闭（重启失效）
-adb shell su -c setenforce 1      # 恢复
+adb shell su -c setenforce 1      # 恢复为强制模式
 ```
+
+> [!warning] 关 SELinux 前先记录当前状态
+> 执行 `setenforce 0` 前，先跑一次 `getenforce` 并**记下输出**。
+> 因为有些定制 ROM 出厂就是 `Permissive`——如果你不记录，
+> 最后执行 `setenforce 1` 会**意外打开** SELinux，反而制造新问题。
+>
+> **恢复时**：原本 `Enforcing` → `setenforce 1`；原本 `Permissive` → 保持 `setenforce 0`。
+> 不确定就跑 `adb reboot`——`setenforce` 不写盘，重启即回默认。
 
 > [!danger] 不要建议用户永久关闭 SELinux
 > 那是把整个系统的安全机制拆掉。
