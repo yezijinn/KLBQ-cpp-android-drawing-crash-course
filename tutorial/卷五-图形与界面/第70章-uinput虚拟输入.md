@@ -312,6 +312,17 @@ int main(int argc, char **argv) {
 adb shell settings put system pointer_location 1
 ```
 
+## 动手验证清单
+
+- [ ] **开 uinput**：`adb shell ls -l /dev/uinput` → 设备存在
+- [ ] **创建虚拟设备**：写 uinput ioctl → 创建虚拟触摸屏
+- [ ] **注入点击**：向 uinput 写 `EV_ABS` + `EV_SYN` → 屏幕上出现一次点击
+- [ ] **验证在游戏里生效**：注入的点击能被游戏接收
+- [ ] **清理**：关闭 fd → 虚拟设备消失
+
+> [!danger] 需要 root
+> 开 `/dev/uinput` 一般需要 root 权限。本项目把触摸转发做成可选功能（第 70 章）。
+
 ## 验收清单
 
 - [ ] 知道 uinput 是"用户态创建虚拟输入设备"的机制（说出"内核给一个 /dev/uinput 接口"）
