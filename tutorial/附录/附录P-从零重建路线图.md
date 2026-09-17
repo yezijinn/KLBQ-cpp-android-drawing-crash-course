@@ -280,6 +280,7 @@ int main() {
 ```bash
 #!/bin/bash
 # scripts/run.sh
+# 说明：正式脚本建议不用 set -e，改为每步显式判错——理由见第 35 章「run.sh 的两个坑」。
 set -e
 TARGET=stage3
 REMOTE=/data/local/tmp/$TARGET

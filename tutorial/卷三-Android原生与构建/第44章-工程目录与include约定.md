@@ -245,15 +245,16 @@ ndk-build -j8 "$@"
 ```bash
 #!/bin/bash
 # scripts/run.sh
-set -e
+# 注意：这里刻意不用 set -e——理由见第 35 章「run.sh 的两个坑」：
+# 出错的 adb 命令若因 set -e 直接退出，你反而看不到任何错误提示。
 TARGET=${1:-app}
 REMOTE=/data/local/tmp/$TARGET
 
-./scripts/build.sh
-adb push libs/arm64-v8a/$TARGET $REMOTE
+./scripts/build.sh || { echo "编译失败"; exit 1; }
+adb push libs/arm64-v8a/$TARGET $REMOTE || { echo "推送失败（设备连接？）"; exit 1; }
 adb shell chmod 755 $REMOTE
 adb logcat -c
-adb shell $REMOTE &
+adb shell "$REMOTE" &          # 常驻程序要后台跑（见第 35 章坑 2）
 sleep 1
 adb logcat -d -s $TARGET | tail -30
 ```
