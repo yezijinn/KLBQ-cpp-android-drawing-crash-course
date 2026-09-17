@@ -730,6 +730,106 @@ int main(void) {
 
 这个 `FakeDriver` 就是第 75 章真实跨进程读写类的雏形——先把逻辑跑通，再换成真驱动。
 
+## 课后习题
+
+### 习题 13.1 写一个泛型 `max_value`（★）
+
+**任务要求**：用模板实现 `max_value(a, b)`，对 `int`/`float`/`double` 都能工作。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <cassert>
+
+template <typename T>
+T max_value(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+int main() {
+    assert(max_value(3, 5) == 5);
+    assert(max_value(1.5, 2.5) == 2.5);
+    assert(max_value(-1, -9) == -1);
+    printf("max(3,5)=%d  max(1.5,2.5)=%.1f\n", max_value(3,5), max_value(1.5,2.5));
+    printf("习题 13.1 全部通过\n");
+    return 0;
+}
+```
+
+> [!tip] 模板 = 把类型也变成参数
+> 写一次，编译器为每种用到的 `T` 生成一个版本。这正是 `dr->Read<T>(addr)` 能读任意类型的原因。
+
+### 习题 13.2 用 `optional` 表达“可能没有”（★★）
+
+**任务要求**：写函数 `std::optional<int> find_index(const std::vector<int>& v, int target)`，
+找到返回下标，找不到返回 `std::nullopt`。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <vector>
+#include <optional>
+#include <cassert>
+
+std::optional<int> find_index(const std::vector<int>& v, int target) {
+    for (int i = 0; i < (int)v.size(); i++)
+        if (v[i] == target) return i;
+    return std::nullopt;      // 明确的“没有值”
+}
+
+int main() {
+    std::vector<int> v = {10, 20, 30, 40};
+    auto a = find_index(v, 30);
+    auto b = find_index(v, 99);
+    assert(a.has_value() && *a == 2);
+    assert(!b.has_value());
+    // 惯用写法：带初始化的 if
+    if (auto idx = find_index(v, 20)) printf("找到 20 在下标 %d\n", *idx);
+    printf("习题 13.2 全部通过\n");
+    return 0;
+}
+```
+
+> [!note] 为什么用 optional 而不是返回 -1
+> 返回 `-1` 需要调用方记住"-1 表示没有"这个约定；`optional` 把"可能没有"写进了类型里，
+> 调用方必须显式处理 `has_value()`。本项目 C++17 起大量用这套（第 15 章 `parse_pid`）。
+
+### 习题 13.3 `string_view` 零拷贝传参（★★）
+
+**任务要求**：写 `bool starts_with(std::string_view s, std::string_view prefix)`，
+用 `string_view` 避免拷贝，并用 `substr` 分割验证。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <string_view>
+#include <cassert>
+
+bool starts_with(std::string_view s, std::string_view prefix) {
+    return s.size() >= prefix.size() &&
+           s.substr(0, prefix.size()) == prefix;
+}
+
+int main() {
+    std::string_view sv("libUE4.so");
+    assert(starts_with(sv, "lib"));
+    assert(!starts_with(sv, "xyz"));
+    // 切出模块名部分（不拷贝）
+    std::string_view name = sv.substr(0, 5);   // "libUE"
+    printf("name=%s\n", std::string(name).c_str());
+    assert(name == "libUE");
+    printf("习题 13.3 全部通过\n");
+    return 0;
+}
+```
+
+> [!warning] `string_view` 不拥有数据
+> 上面 `name` 只是指向 `sv` 的一段，`sv` 一旦销毁，`name` 就悬空。
+> 所以**不能返回局部变量的 view**（本章"不拥有数据"警告）。
+
 ## 验收清单
 
 - [ ] 理解 `template <typename T>` 是什么，能写一个 `max_value`（写 `max_value(3,5)` 和 `max_value(1.5,2.5)` 验证泛型生效）
