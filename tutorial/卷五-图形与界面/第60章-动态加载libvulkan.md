@@ -349,6 +349,15 @@ int main(void) {
 > 不是所有 Android 设备都有 Vulkan。直接链接会让程序在无 Vulkan 设备上**根本起不来**；
 > dlopen 能优雅降级。这就是 `vulkan_wrapper.cpp` 存在的意义。
 
+## 常见坑排查表
+
+| 症状 | 最可能的原因 | 解法 |
+|---|---|---|
+| `dlopen` 返回 NULL | 设备没有 Vulkan，或库名错 | `dlerror()` 看原因；库名是 `libvulkan.so` |
+| `dlsym` 返回 NULL | 函数名拼错或该版本没导出 | 对照 `vulkan_wrapper.h` 里的函数名 |
+| 程序启动就崩 | 直接链接了 `-lvulkan` 但设备没有 | 改用 dlopen（本章核心）|
+| 函数指针调用崩溃 | 没检查 NULL 就调用 | 调用前判 `if (vkCreateInstance)` |
+
 ## 验收清单
 
 - [ ] 知道动态链接 vs dlopen 的关键差别（缺失时能否启动）（说出"直接链接缺失则启动失败"）
