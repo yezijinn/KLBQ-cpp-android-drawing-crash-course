@@ -786,11 +786,9 @@ bool PhysicsScene::IsOccluded(const Vec3 &from, const Vec3 &to) const {
     ray.mask  = 0xFFFFFFFF;
     ray.flags = 0;
 
-    RTCIntersectContext ctx;
-    rtcInitIntersectContext(&ctx);
-
     // ★ rtcOccluded1 比 rtcIntersect1 快 2~3 倍
-    rtcOccluded1(scene_, &ctx, &ray);
+    // Embree 4：rtcOccluded1(scene, ray, args)，第 3 参传 nullptr
+    rtcOccluded1(scene_, &ray, nullptr);
     return ray.tfar < 0.0f;          // 命中时 tfar 被设为负数
 }
 ```

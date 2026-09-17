@@ -377,9 +377,9 @@ Embree 的策略：
 ### 用 Embree 的多射线接口
 
 ```cpp
-// 一次查询多条射线
+// 一次查询多条射线（Embree 4 签名）
 rtcIntersect4/8/16(const int *valid, RTCScene scene,
-                   RTCIntersectContext *ctx, RTCRayHit4/8/16 *rayhit);
+                   RTCRayHit4/8/16 *rayhit, RTCIntersectArguments *args);
 ```
 
 `RTCRayHit4` 内部是 4 组并行的 orgX/orgY/... 数组。
@@ -397,7 +397,8 @@ for (int lane = 0; lane < 4; lane++) {
 }
 
 int valid = 0xF;
-rtcIntersect4(&valid, scene, &ctx, &packet);
+// Embree 4：rtcIntersect4(valid, scene, rayhit, args)，第 4 参传 nullptr
+rtcIntersect4(&valid, scene, &packet, nullptr);
 ```
 
 **注意 `valid` 掩码**：无效的 lane 不参与计算（加速）。
@@ -454,10 +455,12 @@ rtcSetSceneBuildQuality(scene, RTC_BUILD_QUALITY_REFIT);
 
 ```cpp
 // 求交：要找到"最近的"命中，必须遍历所有可能更近的节点
-rtcIntersect1(scene, &ctx, &rayhit);
+// Embree 4：rtcIntersect1(scene, rayhit, args)，第 3 参传 nullptr
+rtcIntersect1(scene, &rayhit, nullptr);
 
 // 遮挡：找到"任意一个"命中就停
-rtcOccluded1(scene, &ctx, &ray);
+// Embree 4：rtcOccluded1(scene, ray, args)
+rtcOccluded1(scene, &ray, nullptr);
 bool occluded = (ray.tfar < 0);
 ```
 
@@ -505,7 +508,8 @@ ray.tfar = 1.0f;        // ← d 的长度就是目标距离
 // 一次查询多条射线（4/8/16 条）
 RTCRay4 rays;
 int valid = 0xF;
-rtcOccluded4(&valid, scene, &ctx, &rays);
+// Embree 4：rtcOccluded4(valid, scene, rays, args)，第 4 参传 nullptr
+rtcOccluded4(&valid, scene, &rays, nullptr);
 
 // 检查哪几条被遮挡
 for (int i = 0; i < 4; i++) {
@@ -638,15 +642,13 @@ public:
         ray.mask  = 0xFFFFFFFF;
         ray.flags = 0;
 
-        RTCIntersectContext ctx;
-        rtcInitIntersectContext(&ctx);
-
+        // Embree 4：rtcOccluded1(scene, ray, args)，第 3 参传 nullptr
         // 用 Occluded：找到任意命中就停
-        rtcOccluded1(staticScene_, &ctx, &ray);
+        rtcOccluded1(staticScene_, &ray, nullptr);
         if (ray.tfar < 0) return true;
 
         ray.tfar = 1.0f - 1e-4f;           // 重置（Occluded 会改它）
-        rtcOccluded1(heightField_, &ctx, &ray);
+        rtcOccluded1(heightField_, &ray, nullptr);
         return ray.tfar < 0;
     }
 
@@ -672,9 +674,8 @@ public:
                 valid |= (1 << k);
             }
 
-            RTCIntersectContext ctx;
-            rtcInitIntersectContext(&ctx);
-            rtcOccluded4(&valid, staticScene_, &ctx, &rays);
+            // Embree 4：rtcOccluded4(valid, scene, rays, args)，第 4 参传 nullptr
+            rtcOccluded4(&valid, staticScene_, &rays, nullptr);
 
             for (size_t k = 0; k < n; k++)
                 out[i+k] = (rays.tfar[k] < 0);

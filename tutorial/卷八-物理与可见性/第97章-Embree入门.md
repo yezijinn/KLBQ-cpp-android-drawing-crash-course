@@ -29,7 +29,7 @@ RTCDevice
        └─ ...
        （内部构建 BVH）
 
-查询：rtcIntersect1(scene, &ctx, &rayhit)
+查询：rtcIntersect1(scene, &rayhit, nullptr)   // Embree 4 签名
 ```
 
 ## 完整流程
@@ -175,9 +175,9 @@ rayhit.ray.mask  = 0xFFFFFFFF;        // 掩码（-1 = 全部）
 rayhit.ray.flags = 0;
 rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;    // ★ 必须初始化
 
-RTCIntersectContext ctx;
-rtcInitIntersectContext(&ctx);
-rtcIntersect1(scene, &ctx, &rayhit);
+// Embree 4 签名：rtcIntersect1(scene, rayhit, args)
+// 不需要高级参数时第 3 参传 nullptr（详见第 43 章 API 版本说明）
+rtcIntersect1(scene, &rayhit, nullptr);
 
 if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
     printf("命中! t=%f, geomID=%u\n", rayhit.ray.tfar, rayhit.hit.geomID);
@@ -216,7 +216,8 @@ rayhit.hit.Ng_x/y/z     // 几何法线（未归一化）
 ```cpp
 RTCRay ray;
 /* 设置 ray */
-rtcOccluded1(scene, &ctx, &ray);
+// Embree 4：rtcOccluded1(scene, ray, args)，第 3 参传 nullptr
+rtcOccluded1(scene, &ray, nullptr);
 // 命中则 ray.tfar 被设为负数
 bool occluded = (ray.tfar < 0);
 ```
@@ -291,9 +292,8 @@ int main(void) {
         rh.ray.mask=-1; rh.ray.flags=0;
         rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
-        RTCIntersectContext ctx;
-        rtcInitIntersectContext(&ctx);
-        rtcIntersect1(scene, &ctx, &rh);
+        // Embree 4：scene, rayhit, args（不需要高级参数传 nullptr）
+        rtcIntersect1(scene, &rh, nullptr);
 
         if (rh.hit.geomID != RTC_INVALID_GEOMETRY_ID)
             printf("  命中: t=%.2f geomID=%u primID=%u\n",
@@ -313,7 +313,21 @@ int main(void) {
 }
 ```
 
+**编译运行**（需要先按第 43 章把 Embree 的 6 个 .a 链进工程）：
+
+```bash
+# 在含 jni/ 的工程根目录
+ndk-build                       # 生成 libs/arm64-v8a/embree_demo
+adb push libs/arm64-v8a/embree_demo /data/local/tmp/
+adb shell chmod 755 /data/local/tmp/embree_demo
+adb shell /data/local/tmp/embree_demo
+```
+
 预期输出：命中 t=10 / 未命中 / 未命中 / 命中 t≈10.05。
+
+> [!warning] Embree 是 arm64 静态库，不能在电脑上直接 g++
+> 本项目的 6 个 `.a` 是 **arm64 版**，只能用 NDK 交叉编译、推到设备运行。
+> 想在电脑上试 Embree 示例，需另下电脑版 Embree（官网）。
 
 ## 常见错误
 

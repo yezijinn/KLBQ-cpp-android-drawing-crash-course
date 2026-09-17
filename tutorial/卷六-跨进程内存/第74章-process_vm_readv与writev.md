@@ -339,6 +339,7 @@ int main(void) {
 // reader.c
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>    // ← pid_t 定义于此（缺了会报 unknown type name 'pid_t'）
 #include <sys/uio.h>
 
 struct Player {
@@ -372,13 +373,45 @@ int main(int argc, char **argv) {
 }
 ```
 
-运行：
+**先编译**（两个程序分别编译）：
 
 ```bash
-./target &                       # 记下 pid 和 &g_player
-./reader <pid> <地址>            # 应该读出 Alice 的数据
-# 看 target 的输出，hp 应该变成 9999
+gcc target.c -o target
+gcc reader.c -o reader
 ```
+
+> [!tip] 编译报错时
+> - `unknown type name 'pid_t'` → 缺 `<sys/types.h>`（上面 reader.c 已补上）
+> - `undefined reference to 'process_vm_readv'` → 目标环境不支持该系统调用，
+>   按本章前面"手写 syscall"一节改用 `syscall(270, ...)`
+
+**再运行**（需要三个终端，或两个终端轮流）：
+
+```bash
+# 终端 1：跑 target（前台，能看到 hp 变化）
+./target
+# 输出：pid=12345
+#       &g_player = 0x404060
+#       （记下这两个值 —— 下面要用）
+
+# 终端 2：跑 reader，把上面记的 pid 和地址填进去
+./reader 12345 0x404060
+# 应输出：
+#   读到: hp=100 pos=(12.5,30.0,5.0) name=Alice
+#   写入 hp=9999, 返回 4
+```
+
+回到终端 1，target 的下一行打印应该变成 `hp=9999`。
+
+> [!warning] 每次重启 target，pid 和地址都会变
+> 因为操作系统有 **ASLR**（地址空间随机化，第 17 章讲过）——
+> 每次运行程序，加载地址都是随机的。
+> **重新跑 target 后，必须重新记录 pid 和 `&g_player`，再用新值跑 reader。**
+> 用旧地址会得到 `EFAULT`（地址不可访问）。
+>
+> 想固定地址调试？可以用 `setarch $(uname -m) -R ./target`（Linux）关闭 ASLR。
+
+> [!tip] target 是无限循环，用 `Ctrl+C` 结束
 
 **这就是跨进程读写的完整闭环。**
 

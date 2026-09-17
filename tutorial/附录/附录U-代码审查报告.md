@@ -917,10 +917,8 @@ bool IsOccluded(const PxVec3 &from, const PxVec3 &to) const {
     ray.mask  = 0xFFFFFFFF;
     ray.flags = 0;
 
-    RTCIntersectContext ctx;
-    rtcInitIntersectContext(&ctx);
-
-    rtcOccluded1(scene_, &ctx, &ray);      // ★ 找到任意命中就停
+    // Embree 4：rtcOccluded1(scene, ray, args)，不需要高级参数传 nullptr
+    rtcOccluded1(scene_, &ray, nullptr);   // ★ 找到任意命中就停
     return ray.tfar < 0.0f;
 }
 ```

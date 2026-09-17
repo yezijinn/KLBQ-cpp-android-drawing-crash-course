@@ -131,7 +131,7 @@ aliases: [附录E, codes]
 | Möller–Trumbore | 95 | `RayTriangleIntersect()` |
 | BVH 划分（最长轴） | 96 | 比较包围盒三个轴长度 |
 | BVH 剪枝 | 96 | `if (tBox > hit.t) return` |
-| Embree 查询 | 97 | `rtcIntersect1(scene, &ctx, &rh)` |
+| Embree 查询 | 97 | `rtcIntersect1(scene, &rh, nullptr)`（Embree 4） |
 | 命中判断 | 97 | `geomID != RTC_INVALID_GEOMETRY_ID` |
 | 凸包扇形三角化 | 94、98 | 从 `poly[0]` 出发连三角形 |
 | 高度场网格化 | 94、98 | 每格两个三角形 |
