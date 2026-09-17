@@ -831,6 +831,11 @@ int main() {
 > 上面 `name` 只是指向 `sv` 的一段，`sv` 一旦销毁，`name` 就悬空。
 > 所以**不能返回局部变量的 view**（本章"不拥有数据"警告）。
 
+## 本章小结
+
+> [!abstract] 一句话回顾
+> **模板 = 编译期生成代码的配方；STL = 现成容器(vector/map/optional)**
+
 ## 验收清单
 
 - [ ] 理解 `template <typename T>` 是什么，能写一个 `max_value`（写 `max_value(3,5)` 和 `max_value(1.5,2.5)` 验证泛型生效）

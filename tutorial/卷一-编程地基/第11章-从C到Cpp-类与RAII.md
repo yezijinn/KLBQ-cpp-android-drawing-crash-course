@@ -755,6 +755,11 @@ int main() {
 > `Shape s;` 会编译报错——有纯虚函数的类是抽象类。
 > 本项目 `AndroidImgui` 就是这种"接口"，具体实现交给 `VulkanGraphics`（第 58 章）。
 
+## 本章小结
+
+> [!abstract] 一句话回顾
+> **类=结构体+函数；RAII=用对象生命周期自动管理资源**
+
 ## 验收清单
 
 - [ ] 能把 C 的"结构体+函数"改写成一个 C++ 类（把 C 版 `player_damage(&p, 30)` 改成 `p.damage(30)`）
