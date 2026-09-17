@@ -341,6 +341,84 @@ int main(void) {
 **一定要验证正确性**——对比暴力和 BVH 的命中结果，必须完全一致。
 （加速结构很容易写出 bug，而且症状很隐蔽。）
 
+## 课后习题
+
+### 习题 96.1 实现 AABB 包围盒与 slab 测试（★★）
+
+**任务要求**：实现 AABB（轴对齐包围盒）的 `rayAABB` 测试，判断射线是否与盒子相交。
+这是 BVH 每层剪枝的核心（与本项目 Embree 的包围盒测试同理）。
+
+**核心骨架**（slab 方法）：
+
+```cpp
+#include <cmath>
+#include <cstdio>
+#include <cassert>
+
+struct V3 { float x, y, z; };
+
+struct AABB { V3 min, max; };
+
+// 射线 origin + t*dir，返回是否相交（t∈[0,tMax]）
+bool rayAABB(const AABB& box, V3 orig, V3 dir, float tMax) {
+    float tmin = 0.0f, tmax = tMax;
+    float o[3] = {orig.x, orig.y, orig.z};
+    float d[3] = {dir.x, dir.y, dir.z};
+    float lo[3] = {box.min.x, box.min.y, box.min.z};
+    float hi[3] = {box.max.x, box.max.y, box.max.z};
+    for (int i = 0; i < 3; i++) {
+        if (fabsf(d[i]) < 1e-8f) {
+            if (o[i] < lo[i] || o[i] > hi[i]) return false;   // 平行且在外
+        } else {
+            float inv = 1.0f / d[i];
+            float t1 = (lo[i] - o[i]) * inv;
+            float t2 = (hi[i] - o[i]) * inv;
+            if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
+            if (t1 > tmin) tmin = t1;
+            if (t2 < tmax) tmax = t2;
+            if (tmin > tmax) return false;   // 无重叠区间 → 不相交
+        }
+    }
+    return true;
+}
+```
+
+**验证断言**：
+
+```cpp
+int main() {
+    AABB box{ {0, 0, 0}, {10, 10, 10} };
+    // 从盒子外朝它射：命中
+    assert(rayAABB(box, {-5, 5, 5}, {1, 0, 0}, 100.0f));
+    // 射偏：不命中
+    assert(!rayAABB(box, {-5, 50, 5}, {1, 0, 0}, 100.0f));
+    // 起点在盒子内：命中（tmin=0）
+    assert(rayAABB(box, {5, 5, 5}, {1, 0, 0}, 100.0f));
+    // 盒子在射线背后：不命中
+    assert(!rayAABB(box, {-5, 5, 5}, {-1, 0, 0}, 100.0f));
+    printf("习题 96.1 全部通过\n");
+    return 0;
+}
+```
+
+**验证断言**：正对命中、射偏不中、盒内命中、背后不中——四种情况均正确。
+
+> [!tip] 这道题练什么
+> ① **slab 方法**：把盒子看成三对平行平面，求射线与每对平面的区间交叠；
+> ② **tmin > tmax** 说明三段区间无公共部分 → 射线擦过盒子 → 不相交；
+> ③ BVH 每一层都先做 AABB 测试，**不命中就整棵子树跳过**——这就是加速的来源。
+
+### 习题 96.2 估算 BVH 的加速比（★，概念题）
+
+**任务要求**：1 万个三角形，暴力遍历 vs BVH，各需要多少次相交测试？
+
+> [!question]- 参考答案
+> - **暴力**：每条射线要测所有 1 万个三角形 → `O(n)` = 10000 次。
+> - **BVH**：平衡树深度 ≈ `log2(10000)` ≈ 14 层，每条射线只访问少数节点 → `O(log n)`。
+>   理想情况约 100~500 次测试，**加速 20~100 倍**。
+> 这就是本项目用 Embree（内部就是 BVH）做遮挡判定的原因——
+> 500 个 Actor 每帧发一条射线，暴力根本跑不动（第 96、99 章）。
+
 ## 验收清单
 
 - [ ] 知道 BVH 与 KD-tree 的区别（划分物体 vs 空间）（各说一句）
