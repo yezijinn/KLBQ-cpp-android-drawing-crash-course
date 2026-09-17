@@ -1641,6 +1641,96 @@ SELinux 状态、几个关键进程的 PID。
 > ```
 > **关键点**：① `FontDataOwnedByAtlas = false` 必需（否则 free 静态内存崩溃）② `GetGlyphRangesChineseFull()` 覆盖常用汉字 ③ 字体数组约占 2.9 MB 体积，可用 `pyftsubset` 进一步裁剪
 
+### 题 5.9 Vulkan 对象层级图（★）
+
+**要求**：不写代码，画出 Vulkan 五个核心对象的关系图，并说明创建顺序与销毁顺序。
+
+> [!question]- 参考答案
+> ```
+> VkInstance（全局，进程一个）
+>   └─ VkPhysicalDevice（GPU，可能多个）
+>        └─ VkDevice（逻辑设备，我们操作它）
+>             ├─ VkQueue（提交命令的通道）
+>             └─ VkCommandPool → VkCommandBuffer（具体任务清单）
+> ```
+> **创建顺序**：Instance → PhysicalDevice（枚举，不创建）→ Device → Queue（从 Device 取，不创建）→ CommandPool → CommandBuffer
+> **销毁顺序**：与创建相反
+> **关键点**：① `VkPhysicalDevice` 是枚举出来的，不需要创建 ② `VkQueue` 从 Device 取，也不需要创建
+
+### 题 5.10 跨版本符号侦察器（★★）
+
+**要求**：用 `dlopen`+`dlsym` 检查当前设备上有哪些 `libgui` 符号，输出"符号名 + 是否存在"的表格。
+
+> [!question]- 参考答案
+> ```cpp
+> #include <dlfcn.h>
+> #include <cstdio>
+>
+> int main(void) {
+>     void *libgui = dlopen("libgui.so", RTLD_NOW);
+>     if (!libgui) { printf("dlopen 失败: %s\n", dlerror()); return 1; }
+>
+>     const char *symbols[] = {
+>         "_ZN7android14SurfaceControl10createTypeERKNS_2spINS_7IBinderEEERKNS_7String8Ejj",
+>         "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjiiRKNS_2spINS_7IBinderEEE",
+>         "_ZN7android14SurfaceControl7setLayerEi",
+>         nullptr
+>     };
+>
+>     for (int i = 0; symbols[i]; i++) {
+>         void *p = dlsym(libgui, symbols[i]);
+>         printf("%-80s %s\n", symbols[i], p ? "存在" : "缺失");
+>     }
+>     dlclose(libgui);
+>     return 0;
+> }
+> ```
+> **关键点**：① `dlsym` 用 **mangled name**（`_ZN...`），不是 C++ 源名 ② 不同 Android 版本符号名可能不同 ③ 用 `nm -D --demangle libgui.so | grep createSurface` 可查真实符号名
+
+### 题 5.11 overlay 最小骨架（★★★）
+
+**要求**：写出一个最小透明覆盖层的骨架（不需要完整 Vulkan 渲染），
+包含：① 创建透明图层 ② 设置 z-order 最高 ③ 用 `dumpsys` 验证图层存在。
+
+> [!question]- 参考答案
+> ```cpp
+> // overlay.cpp —— 最小骨架（不含 Vulkan 渲染）
+> #include <gui/SurfaceComposerClient.h>
+> #include <gui/Surface.h>
+> #include <ui/DisplayInfo.h>
+>
+> using namespace android;
+>
+> int main(void) {
+>     // 1. 创建 SurfaceComposerClient（连接 SurfaceFlinger）
+>     sp<SurfaceComposerClient> client = new SurfaceComposerClient();
+>     if (client->initCheck() != OK) { printf("连接 SF 失败\n"); return 1; }
+>
+>     // 2. 获取主屏幕信息
+>     DisplayInfo dinfo;
+>     sp<IBinder> display = SurfaceComposerClient::getInternalDisplayToken();
+>     SurfaceComposerClient::getDisplayInfo(display, &dinfo);
+>
+>     // 3. 创建透明图层（关键：RGBA_8888 格式）
+>     sp<SurfaceControl> sc = client->createSurface(
+>         String8("myOverlay"), dinfo.w, dinfo.h,
+>         PIXEL_FORMAT_RGBA_8888, 0);
+>
+>     // 4. 设置 z-order 最高
+>     SurfaceComposerClient::Transaction t;
+>     t.setLayer(sc, INT_MAX - 100)
+>      .setPosition(sc, 0, 0)
+>      .show(sc)
+>      .apply();
+>
+>     printf("图层已创建，用 dumpsys SurfaceFlinger | grep myOverlay 验证\n");
+>     sleep(60);
+>     return 0;
+> }
+> ```
+> **验证**：`adb shell dumpsys SurfaceFlinger | grep -A2 myOverlay`
+> **关键点**：① 图层格式必须 `RGBA_8888`（含 alpha）② z-order 用 `INT_MAX` 附近 ③ 透明靠"清屏 alpha=0"而非 `compositeAlpha`（第 59 章）
+
 ---
 
 ## 卷六 · 跨进程内存（8 题）
