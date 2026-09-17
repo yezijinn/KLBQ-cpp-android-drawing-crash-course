@@ -322,6 +322,94 @@ int main(void) {
 六项验证每一行都对应一个物理直觉：
 正前方在中心、后方不可见、右偏右、上偏上、距离翻倍偏移减半、FOV 变大偏移变小。
 
+## 课后习题
+
+### 习题 50.1 实现透视投影 + NDC 映射（★★）
+
+**任务要求**：给定相机空间点 `(camX, camY, camZ)`（x=深度、y=右、z=上），
+用 `t = tan(FOV/2)` 算出屏幕坐标，验证"正前方投到屏幕中心""远的东西偏移减半"。
+
+**参考实现**：
+
+```cpp
+#include <cmath>
+#include <cstdio>
+#include <cassert>
+
+constexpr float PI = 3.14159265358979323846f;
+
+struct Screen { float x, y; bool ok; };
+
+Screen Project(float camX, float camY, float camZ,
+               float halfW, float halfH, float fovDeg) {
+    if (camX < 0.001f) return {0, 0, false};    // 在相机后方
+    float t = tanf(fovDeg * 0.5f * PI / 180.0f);
+    float ndcX = (camY / t) / camX;             // 横向
+    float ndcY = (camZ / t) / camX;             // 纵向
+    return { (ndcX + 1.0f) * halfW, (1.0f - ndcY) * halfH, true };
+}
+
+int main() {
+    const float hw = 1080, hh = 1200;
+    // 1. 正前方 → 屏幕中心
+    Screen c = Project(100, 0, 0, hw, hh, 90);
+    assert(c.ok && fabsf(c.x - hw) < 0.5f && fabsf(c.y - hh) < 0.5f);
+
+    // 2. 远近：同角度、距离翻倍 → 偏移减半
+    Screen near = Project(100, 50, 0, hw, hh, 90);
+    Screen far  = Project(200, 50, 0, hw, hh, 90);
+    float offNear = near.x - hw;
+    float offFar  = far.x  - hw;
+    printf("近偏移=%.1f  远偏移=%.1f  比值=%.2f\n", offNear, offFar, offNear/offFar);
+    assert(fabsf(offNear / offFar - 2.0f) < 0.01f);   // 透视：距离翻倍偏移减半
+
+    // 3. 相机后方不可见
+    assert(!Project(-10, 0, 0, hw, hh, 90).ok);
+    printf("习题 50.1 全部通过\n");
+    return 0;
+}
+```
+
+**验证断言**：正前方→中心 `(1080,1200)`；距离翻倍→偏移比值 `2.0`；相机后方 `ok=false`。
+
+> [!tip] 这道题练什么
+> ① **透视除法**（`/camX`）——远小近大；② **t = tan(FOV/2)** ——视野越广，同一点越靠中间；
+> ③ **Y 轴翻转**（`1 - ndcY`）——数学 y 向上，屏幕 y 向下。
+
+### 习题 50.2 观察 FOV 对画面的影响（★）
+
+**任务要求**：同一个点，FOV 从 90° 变到 120°，观察它在屏幕上的横向偏移怎么变。
+
+**参考实现**：
+
+```cpp
+#include <cmath>
+#include <cstdio>
+#include <cassert>
+
+constexpr float PI = 3.14159265358979323846f;
+
+float offsetX(float camX, float camY, float halfW, float fovDeg) {
+    float t = tanf(fovDeg * 0.5f * PI / 180.0f);
+    return ((camY / t) / camX) * halfW;    // 相对中心的横向偏移
+}
+
+int main() {
+    float hw = 1080;
+    float o90  = offsetX(100, 50, hw, 90);
+    float o120 = offsetX(100, 50, hw, 120);
+    printf("FOV90 偏移=%.1f  FOV120 偏移=%.1f\n", o90, o120);
+    // FOV 越大，t 越大，偏移越小 → 视野越广，物体越靠中间
+    assert(o120 < o90);
+    printf("习题 50.2 全部通过\n");
+    return 0;
+}
+```
+
+> [!note] FOV 越大视野越广
+> 同样一个点，FOV 增大 → `tan(FOV/2)` 增大 → 偏移减小 → 点向中心靠拢 → 看得更"广"。
+> 这就是"望远镜（小 FOV）"和"广角镜（大 FOV）"的数学本质。
+
 ## 验收清单
 
 - [ ] 知道 `t = tan(FOV/2)` 的几何含义（深度 → 半屏高的换算）（说出"深度 d 处半高对应 d*t"）
