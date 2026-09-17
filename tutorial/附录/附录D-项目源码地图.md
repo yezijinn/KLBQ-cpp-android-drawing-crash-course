@@ -67,7 +67,7 @@ while: drawBegin → UpdateImGuiInput → NewFrame
 | `src/Vulkan/VulkanGraphics.cpp` | Vulkan 初始化、交换链、渲染 | 58、59、62 |
 | `include/Vulkan/vulkan_wrapper.h` | 动态加载函数指针声明 | 60 |
 | `src/Vulkan/vulkan_wrapper.cpp` | dlopen + dlsym 实现 | 60 |
-| `include/ImGui/ANativeWindowCreator.h` | 窗口创建（dlsym libgui）★ | 64、65、66、67 |
+| `include/ImGui/ANativeWindowCreator.h` | 窗口创建（dlsym libgui）★ | 64、65、66、67、68 |
 | `include/ImGui/my_imgui_impl_android.h` | ImGui 的 Android 适配 | 61 |
 | `src/ImGui/my_imgui_impl_android.cpp` | 同上实现 | 61 |
 | `include/ImGui/TouchHelperA.h` | 触摸辅助 | 69、70、71 |
