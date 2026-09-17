@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷八, 加速结构, BVH]
-day: 59
+day: 58
 aliases: [ch96]
 ---
 
