@@ -346,6 +346,86 @@ int main(int argc, char **argv) {
 
 跑：`./mapscan self`，看看输出结果。这就是第 76 章 `memview` 的核心。
 
+## 课后习题
+
+### 习题 22.1 解析 maps 行找模块基址（★★）
+
+**任务要求**：写 `parse_maps_line(line, *start, *end, *perms)`，从一行 `/proc/pid/maps` 文本里解析起始地址、结束地址、权限。
+
+**核心骨架**（与源码 `SysHal::get_module_base` 思路一致）：
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <assert.h>
+
+int parse_maps_line(const char* line, uint64_t* start, uint64_t* end, char* perms) {
+    return sscanf(line, "%llx-%llx %4s",
+                  (unsigned long long*)start,
+                  (unsigned long long*)end, perms) == 3;
+}
+
+int main(void) {
+    const char* line = "7a1b3ec000-7a1b3ed000 r-xp 00000000 fd:00 1234  /system/lib64/libc.so";
+    uint64_t s, e; char perms[8];
+    assert(parse_maps_line(line, &s, &e, perms));
+    assert(s == 0x7a1b3ec000ULL);
+    assert(e == 0x7a1b3ed000ULL);
+    assert(strcmp(perms, "r-xp") == 0);
+    printf("start=0x%llX end=0x%llX perms=%s\n",
+           (unsigned long long)s, (unsigned long long)e, perms);
+    printf("习题 22.1 全部通过\n");
+    return 0;
+}
+```
+
+**验证断言**：从 maps 行解析出 `start/end/perms` 三个字段都正确。
+
+> [!tip] 这道题练什么
+> ① **`sscanf` 按格式解析文本**——从一行 maps 里抠出地址和权限；
+> ② 这是本项目 `get_module_base` 读 `/proc/pid/maps` 的第一步；
+> ③ `%llx` 读十六进制、`%4s` 读 4 字符权限串。
+
+### 习题 22.2 用 fd 读写配置（★★，Linux/Android）
+
+**任务要求**：用 `open`/`write`/`read`/`close`（系统调用层，非 stdio）写一个结构体到文件再读回。
+
+**参考实现**：
+
+```c
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+
+typedef struct { int fps; float offset; } Config;
+
+int main(void) {
+    Config out = { 120, 0.5f };
+    int fd = open("/tmp/cfg.bin", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    assert(fd >= 0);
+    write(fd, &out, sizeof(Config));
+    close(fd);
+
+    Config in = { 0 };
+    fd = open("/tmp/cfg.bin", O_RDONLY);
+    assert(fd >= 0);
+    read(fd, &in, sizeof(Config));
+    close(fd);
+
+    assert(in.fps == 120 && in.offset > 0.49f && in.offset < 0.51f);
+    printf("习题 22.2 全部通过（fps=%d offset=%.1f）\n", in.fps, in.offset);
+    return 0;
+}
+```
+
+> [!warning] 只能在 Linux/Android/WSL 上做
+> `open`/`read`/`write` 是 POSIX 系统调用。Windows 上用 WSL 或 Android 设备。
+> 本项目配置文件就是这么存的（`ConfigManager::SaveConfig`）。
+
 ## 验收清单
 
 - [ ] 知道 `open/read/write` 与 `fopen/fread` 的区别及各自适用场合（说出"系统调用无缓冲、标准库带缓冲；按行用 fgets"）
