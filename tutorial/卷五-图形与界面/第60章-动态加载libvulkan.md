@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷五, Vulkan, dlopen]
-day: 39
+day: 38
 aliases: [ch60]
 ---
 

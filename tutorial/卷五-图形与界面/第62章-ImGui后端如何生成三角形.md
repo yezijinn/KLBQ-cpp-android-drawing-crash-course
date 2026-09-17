@@ -1,6 +1,6 @@
 ---
 tags: [教程, 卷五, ImGui, 渲染]
-day: 40
+day: 39
 aliases: [ch62]
 ---
 
