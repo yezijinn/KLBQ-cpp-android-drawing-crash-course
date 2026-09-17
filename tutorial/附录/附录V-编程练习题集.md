@@ -865,7 +865,7 @@ Student *create_student(const char *name, int n) {
 > echo "==> 日志"
 > adb logcat -d -s "$TARGET" | tail -30
 > ```
-> **关键点**：① `set -e` 是"编译失败不继续"的关键 ② `adb logcat -d` 是 dump 后退出（不会阻塞） ③ `"$REMOTE"` 加引号防路径含空格
+> **关键点**：① `set -e` 让"编译失败不继续"，但注意它也会让 `adb` 失败时静默退出——`set -e` 的取舍见第 35 章「run.sh 的两个坑」 ② `adb logcat -d` 是 dump 后退出（不会阻塞） ③ `"$REMOTE"` 加引号防路径含空格
 
 ### 题 3.4 设备信息采集（★）
 
