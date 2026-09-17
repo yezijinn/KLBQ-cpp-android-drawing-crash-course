@@ -351,6 +351,39 @@ objdump -d --start-address=<entry> --stop-address=<entry+64> libfoo.so
 > 3. 制造一次段错误，用 `addr2line` 定位到源码行
 > 4. 做一个静态库 + 一个可执行文件，用 Makefile 管理，故意打乱链接顺序再修好
 
+## 课后习题
+
+### 习题 30.1 从崩溃地址到源码行（★★，需带符号产物）
+
+**要求**：用 `addr2line` 把一个地址转成 `文件:行号`。
+
+**参考实现**：
+
+```bash
+# 1. 编译一份带调试信息的产物
+gcc -g -O0 crash.c -o crash
+# 2. 假设崩溃在 0x1149（用 objdump 找 main 内某地址）
+objdump -d crash | grep -A5 '<main>:'
+# 3. 用 addr2line 还原
+addr2line -e crash -f -C 0x1149
+# 输出：
+#   main
+#   /path/crash.c:5
+```
+
+> [!danger] strip 后 addr2line 失效
+> `-s`（strip）会删掉调试信息，`addr2line` 就查不到了。
+> 调试期去掉 `-s`，或用 `objcopy --only-keep-debug` 分离出 `.debug` 文件单独保留。
+
+### 习题 30.2 看懂 fault addr 的含义（★）
+
+**要求**：崩溃日志 `fault addr 0x00000000000000a0` 说明什么？
+
+> [!question]- 参考答案
+> 这个地址很小（0xa0 = 160），几乎肯定是"**空指针 + 偏移**"——
+> 即某处 `base + 0xa0` 里 base 是 0。查结构体定义，0xa0 处是哪个字段，
+> 就能反推是哪一步没判空。这是本项目最常见的崩溃模式（第 30、89 章）。
+
 ## 验收清单
 
 - [ ] 会用 `nm -C -D` 查符号，`nm -u` 查依赖（对某 .so 跑两条命令，读出导出符号和未定义符号）
