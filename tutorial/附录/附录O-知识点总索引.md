@@ -331,8 +331,8 @@ aliases: [附录O, topicindex]
 | 271 | 目录规范 | 44 | — | `include/` + `src/` |
 | 272 | UTF-8 无 BOM | 44 | — | `.vscode/settings.json` |
 | 273 | 前向声明 | 44 | — | `Draw_ESP.h` |
-| 274 | 配置持久化（XOR） | 12 | 22、24 | `ConfigManager` |
-| 275 | 配置版本兼容 | 12 | 88 | 短文件补默认值 |
+| 274 | 配置持久化（XOR） | 22 | 24、88 | `ConfigManager` |
+| 275 | 配置版本兼容 | 22 | 88 | 短文件补默认值 |
 | 276 | `SaveConfig` 原地修改陷阱 | 附N | — | 先拷贝再加密 |
 | 277 | 抽象接口隔离后端 | 80 | — | `IDriver` |
 | 278 | 能力探测模式 | 80 | — | `kernel()` 判空 |
