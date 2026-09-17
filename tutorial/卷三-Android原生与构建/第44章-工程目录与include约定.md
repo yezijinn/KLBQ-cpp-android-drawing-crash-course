@@ -328,6 +328,14 @@ mkdir -p myproject/{jni/{include/{Core,Platform,Render,Memory},src/{Core,Platfor
 > [!tip] 这个骨架就是卷四~卷八的工作目录
 > 第 44 章的综合练习产出，后面 56 章都在这个结构上继续加代码。
 
+> [!warning] 搭错了想重来？
+> 目录结构搭乱、`make` 报奇怪的错时，**不用推倒重来**：
+> 1. `ndk-build clean`（清产物）→ 再 `ndk-build` 看是否恢复
+> 2. 还不行就 `rm -rf obj/ libs/` 删掉中间产物，重新构建
+> 3. 只在**目录结构本身错乱**时，才按上面清单重新搭一次
+>
+> 保留 `jni/` 里你的源码——重建只针对产物目录，别删源码。
+
 ## 验收清单
 
 - [ ] 能画出本项目的目录结构，并说出每个目录的作用（画 jni/include/src/libs/obj 并标注）

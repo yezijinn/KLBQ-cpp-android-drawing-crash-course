@@ -335,6 +335,15 @@ adb logcat -d -s HelloNDK | tail -20
 > [!tip] 每次改代码后都走一遍这 5 步
 > 编译→推送→赋权→运行→看日志，这就是本教程后面一直用的工作流。
 
+> [!warning] 中途某步失败，如何重来？
+> 这几步都是**可重复执行**的，失败后修正再跑即可，不用从头：
+> - **编译失败** → 看报错改代码，重新 `ndk-build`
+> - **push 失败** → 确认设备连着（`adb devices`），重新 push
+> - **运行 Permission denied** → 忘了 `chmod 755`，补上再跑
+> - **推错了想清干净** → `adb shell rm /data/local/tmp/你的程序`，重新走
+>
+> 唯一要注意：`adb push` 会**覆盖**同名文件，多推几次不会有副作用。
+
 ## 验收清单
 
 - [ ] 手机已连上，`adb devices` 显示 `device`（输出一行 xxx device）
