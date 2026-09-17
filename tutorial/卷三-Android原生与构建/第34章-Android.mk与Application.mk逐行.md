@@ -278,7 +278,7 @@ ndk-build -B
 | `fatal error: xxx.h: No such file` | 缺 include 路径 | 加 `LOCAL_C_INCLUDES` |
 | `Android NDK: Could not find application project directory` | 不在工程根目录执行 | `cd` 到有 `jni/` 的目录 |
 | `error: undefined reference to 'std::xxx'` | STL 不一致 | 统一 `APP_STL` |
-| 编译很慢 | LTO 开销 | 调试时去掉 `-flto` |
+| 编译很慢 | LTO（链接时优化，把所有 .o 合并优化，慢但产物更小）开销 | 调试时去掉 `-flto` |
 
 ## 动手：给示例工程加一个模块
 
