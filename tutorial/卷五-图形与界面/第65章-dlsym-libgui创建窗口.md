@@ -315,6 +315,18 @@ int main(void) {
 在设备上跑，记录**你的 Android 版本下哪些符号存在**。
 这份记录就是第 66 章做版本适配的依据。
 
+## 动手验证清单
+
+- [ ] **符号侦察**：`nm -D /system/lib64/libgui.so | grep createSurface` → 找到符号
+- [ ] **看 mangled 名**：`c++filt <符号名>` → 还原成可读函数签名
+- [ ] **dlopen libgui**：原生可执行文件里 `dlopen("libgui.so")` → 成功（App 里会失败）
+- [ ] **dlsym 构造函数**：`dlsym(handle, "_ZN7android21SurfaceComposerClient...")` → 非 NULL
+- [ ] **创建图层**：调用 createSurface → 拿到 SurfaceControl
+- [ ] **验证顶层**：`dumpsys SurfaceFlinger` → 看到自己的图层名（伪装名）
+
+> [!warning] 只能在原生可执行文件里做
+> App（.so）在 Android 7+ 无法 dlopen libgui（linker namespace 限制），第 32 章讲过。
+
 ## 验收清单
 
 - [ ] 知道三条创建图层路径的差别（Java/NDK/dlsym libgui，各说一句）

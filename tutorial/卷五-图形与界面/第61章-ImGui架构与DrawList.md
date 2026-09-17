@@ -308,6 +308,17 @@ void PrintDrawData(ImDrawData *dd) {
 2. 加一行文字呢？（每字符 6 个顶点）
 3. 用 `GetForegroundDrawList()->AddLine()` 画一条线，它出现在哪个 CmdList？
 
+## 动手验证清单
+
+- [ ] **写最小 ImGui 帧**：`NewFrame()` → `Begin()`/`Text()`/`End()` → `Render()`
+- [ ] **检查 DrawList**：`ImGui::GetDrawData()` → 打印 `TotalVtxCount`（非 0）
+- [ ] **理解立即模式**：改一帧里 `Text` 的内容 → 下一帧显示跟着变（无"同步"步骤）
+- [ ] **统计命令**：遍历 `CmdLists` → 打印每个 `CmdBuffer.Size`（命令数）
+
+> [!note] DrawList 里装什么
+> 顶点数组 `VtxBuffer` + 索引数组 `IdxBuffer` + 命令数组 `CmdBuffer`（按纹理分组）。
+> 一帧的 UI 就被压成这些数组，交给后端画。
+
 ## 验收清单
 
 - [ ] 能说出立即模式与保留模式的区别（说出"立即模式无控件对象、每帧重描述"）

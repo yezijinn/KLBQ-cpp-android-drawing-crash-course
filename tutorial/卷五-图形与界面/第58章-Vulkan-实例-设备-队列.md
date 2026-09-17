@@ -370,6 +370,18 @@ int main(void) {
 在电脑上（装了 Vulkan SDK）编译运行；
 在 Android 上用 NDK 编译后 push 运行，看输出什么 GPU。
 
+## 动手验证清单
+
+- [ ] **创建 Instance**：调用 `vkCreateInstance` → 返回 `VK_SUCCESS`
+- [ ] **枚举物理设备**：`vkEnumeratePhysicalDevices` → 至少 1 个
+- [ ] **查设备属性**：`vkGetPhysicalDeviceProperties` → 打印 GPU 名称
+- [ ] **找队列族**：确认有支持图形操作的队列族
+- [ ] **创建设备+队列**：`vkCreateDevice` + `vkGetDeviceQueue` → 拿到 `VkQueue`
+- [ ] **清理**：按创建逆序销毁所有对象（无验证层报错）
+
+> [!note] 每个结构体都要填 `sType`
+> 忘填会得到 `VK_ERROR_VALIDATION_FAILED` 或直接崩。这是 Vulkan 最常见的低级错误。
+
 ## 验收清单
 
 - [ ] 知道五个核心对象的层级关系（Instance → PhysicalDevice → Device → Queue，画出层级）

@@ -365,6 +365,15 @@ for (auto& f : fmts)
 本项目的透明**不依赖某个特定的 compositeAlpha**，而是靠"图层 RGBA + 清屏 alpha=0"，
 所以这里主要是了解设备能力，不是"必须找到 POST_MULTIPLIED"。
 
+## 动手验证清单
+
+- [ ] **创建 Surface**：`vkCreateAndroidSurfaceKHR` → 返回成功
+- [ ] **查表面能力**：`vkGetPhysicalDeviceSurfaceCapabilitiesKHR` → 打印 min/maxImageCount
+- [ ] **查支持格式**：`vkGetPhysicalDeviceSurfaceFormatsKHR` → 选一个 `R8G8B8A8_UNORM`
+- [ ] **创建交换链**：`vkCreateSwapchainKHR` → 拿到至少 2 张图像
+- [ ] **拿图像**：`vkGetSwapchainImagesKHR` → 确认图像数量
+- [ ] **画面显示**：清屏成某颜色 → 提交 → 屏幕上看到纯色（**这步要设备**）
+
 ## 验收清单
 
 - [ ] 理解交换链解决"撕裂"问题（双/三缓冲）（说出"一个显示、一个绘制"）

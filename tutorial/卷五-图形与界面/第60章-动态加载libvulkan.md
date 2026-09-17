@@ -338,6 +338,17 @@ int main(void) {
 | Android 7+ 找不到 libvulkan.so | 私有库限制（App 场景） | 原生可执行文件不受限（第 32 章） |
 | 只加载了核心函数，扩展函数崩 | 扩展要用 `vkGetXxxProcAddr` | 分两类加载 |
 
+## 动手验证清单
+
+- [ ] **dlopen 成功**：`dlopen("libvulkan.so", RTLD_NOW)` → 非 NULL
+- [ ] **加载核心函数**：用宏加载 `vkCreateInstance` 等 → 都非 NULL
+- [ ] **验证降级**：在无 Vulkan 的机器上 dlopen 失败 → 程序仍能启动（打印"无 Vulkan"）
+- [ ] **对比链接方式**：直接 `-lvulkan` 的程序在无 vulkan 设备上无法启动
+
+> [!tip] 为什么必须 dlopen
+> 不是所有 Android 设备都有 Vulkan。直接链接会让程序在无 Vulkan 设备上**根本起不来**；
+> dlopen 能优雅降级。这就是 `vulkan_wrapper.cpp` 存在的意义。
+
 ## 验收清单
 
 - [ ] 知道动态链接 vs dlopen 的关键差别（缺失时能否启动）（说出"直接链接缺失则启动失败"）

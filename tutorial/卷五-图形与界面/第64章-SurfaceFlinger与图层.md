@@ -340,6 +340,16 @@ adb shell dumpsys SurfaceFlinger | grep -i 'hwc\|max layers'
 2. 打开一个 App，看图层怎么变
 3. 思考：如果我要在所有内容之上加一层，z 应该设多少？
 
+## 动手验证清单
+
+- [ ] **看图层**：`adb shell dumpsys SurfaceFlinger | grep -i layer` → 找到自己的图层
+- [ ] **确认像素格式**：源码里 `pixelFormat = 1`（RGBA_8888）
+- [ ] **看 z-order**：`dumpsys SurfaceFlinger` → 确认图层在最上层附近
+- [ ] **观察合成**：`adb shell dumpsys SurfaceFlinger --latency` → 看合成延迟
+
+> [!note] 透明来自两处，不是 compositeAlpha
+> 本项目用 OPAQUE/INHERIT，透明靠"图层 RGBA + 每帧清屏 alpha=0"。别以为要设 POST_MULTIPLIED。
+
 ## 验收清单
 
 - [ ] 知道屏幕画面是多个图层合成的（说出状态栏/导航栏/App 各是图层）
