@@ -416,6 +416,77 @@ proj/
 写完后故意改一下 `utils.h` 的内容（加个空格也行），
 看 `make` 是否重新编译——验证依赖是否生效。
 
+## 课后习题
+
+### 习题 29.1 写一个带增量编译的 Makefile（★★）
+
+**任务要求**：为两个源文件写 Makefile，支持 `make`、`make clean`，
+且改头文件能触发重编译（`-MMD` 依赖追踪）。
+
+**参考实现**：
+
+```makefile
+CC      := gcc
+CFLAGS  := -Wall -Wextra -MMD -MP
+TARGET  := app
+OBJS    := main.o utils.o
+DEPS    := $(OBJS:.o=.d)
+
+.PHONY: all clean
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+\t$(CC) $(OBJS) -o $@
+
+%.o: %.c
+\t$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+\trm -f $(OBJS) $(DEPS) $(TARGET)
+
+-include $(DEPS)
+```
+
+**验证方式**：
+
+```bash
+make                    # 编译
+make                    # 再跑一次：应该"Nothing to be done"（增量）
+touch utils.h           # 改头文件
+make                    # utils.o 重新编译（-MMD 依赖追踪生效）
+make clean              # 清理
+```
+
+> [!danger] Makefile 缩进必须是 Tab
+> 命令行前的缩进**必须是 Tab 字符**，用空格会报 `missing separator`。
+> 这是 Makefile 最经典的坑（第 29 章反复强调）。
+>
+> [!note] Windows 上的小差异
+> Windows 的 gcc 默认产出 `app.exe`，而上面 Makefile 的目标名是 `app`——
+> 于是每次 `make` 都会重新链接（它找不到名为 `app` 的文件）。
+> **这不影响 Linux/Android**（本项目目标平台），那里产出就叫 `app`。
+> 若在 Windows 上练习，把 `TARGET := app` 改成 `TARGET := app.exe` 即可。
+
+### 习题 29.2 模式规则改写（★）
+
+**要求**：把"每个 `.o` 写一条规则"改成**一条模式规则** `%.o: %.c`。
+
+```makefile
+# 啰嗦版
+main.o: main.c
+\tgcc -c main.c -o main.o
+utils.o: utils.c
+\tgcc -c utils.c -o utils.o
+
+# 模式规则版（等价，更简洁）
+%.o: %.c
+\tgcc -c $< -o $@
+```
+
+> [!note] 自动变量
+> `$@` = 目标名（`main.o`）、`$<` = 第一个依赖（`main.c`）、`$^` = 所有依赖。
+> 模式规则用它们就能把"所有 `.c` → `.o`"压缩成一条规则。
+
 ## 验收清单
 
 - [ ] 知道 Makefile 规则格式，以及命令行必须用 Tab（用空格缩进看 missing separator 报错）
