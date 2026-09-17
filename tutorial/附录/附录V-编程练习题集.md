@@ -1698,7 +1698,9 @@ SELinux 状态、几个关键进程的 PID。
 输出进程的所有模块及基址、可扫描区域统计、指定模块的基址。
 
 > [!question]- 参考答案
-> 见 [[第76章-proc-pid-maps与模块基址]] 的完整实现，核心三函数：
+> **完整代码见 [[第76章-proc-pid-maps与模块基址]] 的「memview 主程序」一节**——
+> 它由 `struct MapRegion` + 三个函数 + `main` 组成，可编译运行。
+> 三个核心函数：
 > ```cpp
 > std::vector<MapRegion> ParseMaps(const std::string &text);       // 解析 maps
 > uint64_t FindModuleBase(const std::vector<MapRegion>&, const std::string&);  // 找基址
@@ -1713,6 +1715,9 @@ SELinux 状态、几个关键进程的 PID。
 > === 可扫描区域: 45 个，共 128.4 MB ===
 > 模块 libc.so 基址 = 0x0000007a1c000000
 > ```
+>
+> **编译**：`g++ -std=c++17 memview.cpp -o memview`（用 `g++` 不是 `gcc`）
+> **运行**：`./memview <pid> libc.so`
 
 ### 题 6.4 指针链跟随（跨进程版）（★★）
 
