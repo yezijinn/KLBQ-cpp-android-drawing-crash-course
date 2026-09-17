@@ -355,7 +355,7 @@ struct Player {
 int main(int argc, char **argv) {
     if (argc < 3) { printf("用法: %s <pid> <地址(16进制)>\n", argv[0]); return 1; }
     pid_t pid = atoi(argv[1]);
-    void *addr = (void*)strtoull(argv[2], nullptr, 16);
+    void *addr = (void*)strtoull(argv[2], NULL, 16);
 
     struct Player p;
     struct iovec local  = {&p, sizeof(p)};

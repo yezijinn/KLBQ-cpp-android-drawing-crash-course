@@ -350,7 +350,7 @@ int main(void) {
 > char *make_greeting(const char *name) {
 >     const size_t need = strlen("Hello, ") + strlen(name) + 1;
 >     char *buf = (char *)malloc(need);          // ★ 改堆分配
->     if (!buf) return nullptr;
+>     if (!buf) return NULL;                     // C 里用 NULL，不是 nullptr
 >     strcpy(buf, "Hello, ");
 >     strcat(buf, name);
 >     return buf;                                // ★ 返回堆指针
@@ -364,7 +364,7 @@ int main(void) {
 >     char *arr = malloc(4);
 >     for (int i = 0; i < 4; i++) arr[i] = (char)i;   // ★ i < 4
 >     free(arr);
->     arr = nullptr;                             // ★ 置空，防误用
+>     arr = NULL;                                // ★ 置空，防误用（C 里用 NULL）
 >     return 0;
 > }
 > ```

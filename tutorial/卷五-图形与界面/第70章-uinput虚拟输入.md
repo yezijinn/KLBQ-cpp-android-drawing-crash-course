@@ -118,7 +118,7 @@ int CreateVirtualTouch(int screenW, int screenH) {
 ```c
 void EmitEvent(int fd, __u16 type, __u16 code, __s32 value) {
     struct input_event ev = {};
-    gettimeofday(&ev.time, nullptr);
+    gettimeofday(&ev.time, NULL);
     ev.type  = type;
     ev.code  = code;
     ev.value = value;

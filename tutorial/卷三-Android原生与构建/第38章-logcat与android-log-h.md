@@ -16,7 +16,7 @@ aliases: [ch38]
 
 ## 先看本项目的用法
 
-```c
+```cpp
 LS_LOGI_TAG("Driver", "模块索引=%d 名称=%s 区段数量=%d", i, mod.name, mod.seg_count);
 LS_LOGE_TAG("Dump", "无法创建 /sdcard/dump: %s", std::strerror(errno));
 ```

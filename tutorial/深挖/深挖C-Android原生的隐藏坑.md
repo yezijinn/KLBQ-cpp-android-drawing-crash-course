@@ -103,9 +103,9 @@ libneuralnetworks.so
 
 ### 实测方法
 
-```c
+```cpp
 #include <dlfcn.h>
-#include <stdio.h>
+#include <cstdio>
 
 int main(void) {
     const char *libs[] = {"libgui.so", "libutils.so", "libbinder.so",
