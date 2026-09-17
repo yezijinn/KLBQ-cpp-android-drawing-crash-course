@@ -266,6 +266,19 @@ struct PlayerController {
 让 demo 每帧更新相机（模拟玩家操作），
 然后用外部程序读——**对比 demo 打印的值**。
 
+## 动手验证清单
+
+- [ ] **读相机位置**：从 `CameraCache` 读 `POV.Location` → 打印 3 个 float
+- [ ] **读相机旋转**：读 `POV.Rotation` → 打印 pitch/yaw/roll
+- [ ] **读 FOV**：读 `POV.FOV` → 打印（注意**每帧读**，开镜会变）
+- [ ] **读控制器旋转**：读 `ControlRotation` → 与 POV.Rotation 对比
+- [ ] **区分两者**：说出 CameraCache 是"实际视角"、ControlRotation 是"玩家输入"
+- [ ] **UI 验证**：把相机数据画到屏幕上，与游戏实际视角对照 ★
+
+> [!warning] FOV 不能缓存
+> 开镜/切换武器时 FOV 会变。缓存会导致 W2S 偏移，ESP 框"飘"。
+> 本项目每帧重读 FOV（第 90、91 章）。
+
 ## 验收清单
 
 - [ ] 知道 ControlRotation 与 CameraCache/POV 的区别（说出"逻辑朝向 vs 实际渲染朝向"）

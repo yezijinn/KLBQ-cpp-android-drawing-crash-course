@@ -355,6 +355,19 @@ adb shell /data/local/tmp/embree_demo
 
 再测 `rtcOccluded1` —— 应该比 `rtcIntersect1` 快 2~3 倍。
 
+## 动手验证清单
+
+- [ ] **引入 Embree**：按第 43 章链接 6 个 `.a`，编译通过
+- [ ] **创建设备**：`rtcNewDevice` → 非 NULL
+- [ ] **建场景**：`rtcNewScene` → 加入一个盒子
+- [ ] **提交场景**：`rtcCommitScene` → 无错误
+- [ ] **发射射线**：`rtcIntersect1` → 4 个用例（命中/未命中/擦边/背后）结果正确
+- [ ] **限制线程**：`rtcSetDeviceProperty(..., "threads", 4)` → 避免手机上线程爆炸
+- [ ] **实测性能**：对比 Embree vs 手写 BVH 的耗时
+
+> [!warning] 手机上必须限制线程数
+> 默认会用满所有核心，在手机上可能导致线程爆炸。本项目设 `threads` 上限。
+
 ## 验收清单
 
 - [ ] 知道四个核心对象的关系（Device/Scene/Geometry/Buffer，画出层级）
