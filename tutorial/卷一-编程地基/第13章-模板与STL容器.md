@@ -104,7 +104,9 @@ v.push_back(30);        // 现在 [10, 20, 30]
 
 ```cpp
 printf("%zu\n", v.size());     // 3
-printf("%d\n", v.empty());     // 0（false，表示不空）
+printf("%d\n", v.empty());     // 输出 0
+// 说明：empty() 问"你空吗？"——v 里有 3 个元素，所以它回答"不空"（false），
+// 打印成整数就是 0。对照：若 v 是空的，empty() 返回 true，打印出 1。
 ```
 
 **访问元素**（和数组一样）：
