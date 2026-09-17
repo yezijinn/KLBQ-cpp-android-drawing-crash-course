@@ -760,7 +760,7 @@ Student *create_student(const char *name, int n) {
 
 ---
 
-## 卷三 · Android 原生（6 题）
+## 卷三 · Android 原生（10 题）
 
 ### 题 3.1 写 `Android.mk`（★）
 
@@ -978,6 +978,85 @@ SELinux 状态、几个关键进程的 PID。
 > LOGI("double_it(21) = %d", double_it(21));   // 42
 > ```
 > **关键点**：① 预编译库用 `PREBUILT_STATIC_LIBRARY` ② `extern "C"` 防止 C++ 名字修饰导致链接失败 ③ 库必须与目标 ABI 一致（arm64）
+
+### 题 3.7 用 clang 直编 arm64（★）
+
+**要求**：写一个 `hello.c`，用 NDK 的 clang 编译器**直接编译**成 arm64 可执行文件（不走 ndk-build），然后用 `file` 命令验证产物架构。
+
+> [!question]- 参考答案
+> ```c
+> // hello.c
+> #include <stdio.h>
+> #include <android/log.h>
+> #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "HelloNDK", __VA_ARGS__)
+> int main(void) {
+>     printf("hello from arm64\n");
+>     LOGI("logcat 也能看到我");
+>     return 0;
+> }
+> ```
+> ```bash
+> $NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android21-clang.cmd \
+>     hello.c -o hello_arm64 -llog
+> file hello_arm64
+> ```
+> `file` 应输出 `ELF 64-bit LSB executable, ARM aarch64, ...`
+> **关键点**：① 编译器名字里的 `21` 是最低 API ② `-llog` 才能用 `__android_log_print` ③ Windows 上 clang 带 `.cmd` 后缀
+
+### 题 3.8 诊断三种权限拒绝（★★）
+
+**要求**：制造并识别三种权限拒绝：DAC（没执行权限）、UID（非 root 访问受保护文件）、SELinux（root 仍被策略拦）。
+
+> [!question]- 参考答案
+> ```bash
+> # 1. DAC 拒绝
+> adb push hello /data/local/tmp/noperm
+> adb shell /data/local/tmp/noperm     # → Permission denied
+> # 识别：没有 avc: denied 日志
+>
+> # 2. UID 拒绝
+> adb shell cat /proc/1/cmdline        # → Permission denied（非 root）
+>
+> # 3. SELinux 拒绝
+> adb shell su -c "cat /proc/1/mem"    # → Permission denied（即使 root）
+> adb shell su -c dmesg | grep avc     # → 看到 avc: denied
+> ```
+> **关键点**：区分三种拒绝的**唯一可靠方法**是看有没有 `avc: denied` 日志（第 37 章）。
+
+### 题 3.9 复现交叉编译的坑（★★）
+
+**要求**：故意制造"ABI 不匹配"（编译 armeabi-v7a 推到 arm64 设备），观察报错。
+
+> [!question]- 参考答案
+> ```bash
+> # 坑：ABI 错
+> ndk-build APP_ABI=armeabi-v7a        # 编出 32 位
+> adb push libs/armeabi-v7a/app /data/local/tmp/
+> adb shell /data/local/tmp/app        # → "not executable: 32-bit ELF"
+> ```
+> **关键点**：ABI 决定"能不能跑"，API level 决定"能不能用某个函数"（第 39 章）。
+
+### 题 3.10 搭规范工程骨架（★）
+
+**要求**：按第 44 章的目录约定，搭出 `include/` + `src/` 镜像结构的工程骨架，包含至少 2 个模块、`.gitignore`。
+
+> [!question]- 参考答案
+> ```
+> myproject/
+> ├── jni/
+> │   ├── Android.mk
+> │   ├── Application.mk
+> │   ├── include/
+> │   │   ├── My_Utils/Log.h
+> │   │   └── Core/Engine.h
+> │   └── src/
+> │       ├── main.cpp
+> │       ├── My_Utils/Log.cpp
+> │       └── Core/Engine.cpp
+> ├── .gitignore          # 排除 libs/ obj/
+> └── build.sh            # 一键构建
+> ```
+> **关键点**：① `include/` 和 `src/` 子目录结构**镜像对应** ② `.gitignore` 排除 `libs/` `obj/`
 
 ---
 
