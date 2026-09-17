@@ -269,7 +269,7 @@ struct PlayerController {
 ## 验收清单
 
 - [ ] 知道 ControlRotation 与 CameraCache/POV 的区别（说出"逻辑朝向 vs 实际渲染朝向"）
-- [ ] 知道 POV 三个偏移是连续的（可一次读完）（说出三个偏移连续，一次读 12 字节）
+- [ ] 知道 POV 三个字段是连续的（可一次读完）（说出三个字段共 28 字节：Vec3 12 + Rotator 12 + float 4，一次读 28 字节而非三次）
 - [ ] 能画出 PlayerController 的五級获取链（画出五级指针链）
 - [ ] 理解"只写 ControlRotation"与"同时写 POV"的差别（说出后者画面会跟着动）
 - [ ] 知道 FOV 必须每帧读（开镜会变）（说出为什么不能缓存）
