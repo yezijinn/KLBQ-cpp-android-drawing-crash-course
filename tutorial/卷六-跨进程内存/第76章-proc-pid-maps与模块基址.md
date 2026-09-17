@@ -204,8 +204,8 @@ std::vector<std::pair<uintptr_t, uintptr_t>> GetScanRegions() override {
 ## memview 主程序
 
 > [!warning] 下面的代码用到三个函数，它们定义在本章前面
-> `ParseMaps()`（第 60 行附近）、`FindModuleBase()`（第 100 行附近）、
-> `GetScannableRegions()`（第 161 行附近）。
+> `ParseMaps()`（"解析实现"一节）、`FindModuleBase()`（"找模块基址"一节）、
+> `GetScannableRegions()`（"可扫描区域"一节）。
 > **要编译，得把这三段函数复制到 `struct MapRegion` 下方**，
 > 或者直接看附录 I / 附录 E 里整合好的完整文件。
 
