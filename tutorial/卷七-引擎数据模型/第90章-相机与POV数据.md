@@ -268,6 +268,10 @@ struct PlayerController {
 
 ## 动手验证清单
 
+> [!important] 前置条件
+> 下面的验证需**读取真实游戏进程的相机数据**——要有 root 设备 + 已定位 `CameraCache` 偏移（第 87/88 章）。
+> **无设备**：读懂 `MinimalViewInfo` 结构 + 用附录 I 的 demo 引擎模拟即可。
+
 - [ ] **读相机位置**：从 `CameraCache` 读 `POV.Location` → 打印 3 个 float
 - [ ] **读相机旋转**：读 `POV.Rotation` → 打印 pitch/yaw/roll
 - [ ] **读 FOV**：读 `POV.FOV` → 打印（注意**每帧读**，开镜会变）
