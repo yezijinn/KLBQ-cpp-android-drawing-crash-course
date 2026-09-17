@@ -10,6 +10,10 @@ aliases: [ch90]
 > 理解 `CameraCache` 和 `ControlRotation` 的区别，
 > 以及为什么本项目自瞄要区分"写哪个"。
 
+> [!note] 承上
+> 上一章保证了"读的数据不崩"。
+> 本章读**相机数据**——`CameraCache` 和 `ControlRotation` 的区别，自瞄写哪个。
+
 ## 先看 UE4 里的两套相机数据
 
 | 数据 | 位置 | 含义 |
