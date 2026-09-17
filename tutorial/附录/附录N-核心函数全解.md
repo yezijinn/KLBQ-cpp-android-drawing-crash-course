@@ -1235,7 +1235,7 @@ inline bool HoldStill(int sw, int sh) {
 
 | 函数 | 作用 | 关键点 |
 |---|---|---|
-| `ScreenSize(w, h)` | 取屏幕半宽半高 | **★ 这里有个 bug（第 14 章）** |
+| `ScreenSize(w, h)` | 取屏幕半宽半高 | **★ 这里有个 bug（附录 U 的 S4）** |
 | `Release()` | 抬起 | 有冷却帧 |
 | `Run()` | 主逻辑 | 两种模式（绝对/增量） |
 
