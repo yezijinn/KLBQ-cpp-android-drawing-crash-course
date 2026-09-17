@@ -458,6 +458,89 @@ void HandleActors(const uint64_t arrayAddr, const int32_t count) {
 注意 `8ULL * i`：`i` 是 `int`，`8 * i` 也是 `int`，`i` 很大时会溢出。
 写成 `8ULL * i` 让整个表达式提升到 `unsigned long long`。
 
+## 课后习题
+
+### 习题 12.1 用引用改写“交换两个数”（★）
+
+**任务要求**：写函数 `void swap_int(int &a, int &b)` 交换两数（用引用，不用指针）。再写调用代码验证交换成功。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <cassert>
+
+void swap_int(int &a, int &b) {
+    int t = a;
+    a = b;
+    b = t;
+}
+
+int main() {
+    int x = 3, y = 8;
+    swap_int(x, y);
+    printf("x=%d y=%d\n", x, y);   // x=8 y=3
+    assert(x == 8 && y == 3);
+    printf("习题 12.1 通过\n");
+    return 0;
+}
+```
+
+**验证断言**：
+
+```cpp
+int main() {
+    int x = 1, y = 2;
+    swap_int(x, y);
+    assert(x == 2 && y == 1);
+    x = -5; y = 5;
+    swap_int(x, y);
+    assert(x == 5 && y == -5);
+    printf("习题 12.1 全部通过\n");
+    return 0;
+}
+```
+
+> [!tip] 为什么用引用不用指针
+> 引用调用时写 `swap_int(x, y)`（清爽），不用 `swap_int(&x, &y)`，函数体里也直接用 `a`/`b` 而非 `*a`/`*b`。这正是本章“引用传参优于指针传参”的实践。
+
+### 习题 12.2 `const &` 避免大对象拷贝（★★）
+
+**任务要求**：定义 `struct Big { int data[1000]; }`（约 4KB）。写两个函数：`int sum_by_value(Big b)`（值传递）和 `int sum_by_cref(const Big &b)`（const 引用）。两者结果相同，并说明为什么 `const &` 更好。
+
+**参考实现**：
+
+```cpp
+#include <cstdio>
+#include <cassert>
+
+struct Big { int data[1000]; };
+
+int sum_by_value(Big b) {            // ★ 拷贝 4KB
+    int s = 0;
+    for (int i = 0; i < 1000; i++) s += b.data[i];
+    return s;
+}
+
+int sum_by_cref(const Big &b) {      // ★ 只传地址，不拷贝，且承诺不改
+    int s = 0;
+    for (int i = 0; i < 1000; i++) s += b.data[i];
+    return s;
+}
+
+int main() {
+    Big big{};
+    for (int i = 0; i < 1000; i++) big.data[i] = i;
+    assert(sum_by_value(big) == sum_by_cref(big));
+    printf("sum=%d\n", sum_by_cref(big));
+    printf("习题 12.2 通过\n");
+    return 0;
+}
+```
+
+> [!note] 值传递 vs const 引用
+> `sum_by_value` 每次调用**拷贝整个 4KB 结构体**；`sum_by_cref` 只传一个地址（8 字节）。大对象参数一律用 `const &`——这正是本项目 `draw(const Matrix &m)` 的写法（Matrix 是 64 字节）。
+
 ## 验收清单
 
 - [ ] 能说出引用和指针的三个区别（"必须初始化/不能为空/不能改绑"）
