@@ -348,6 +348,8 @@ Embree 的 6 个库也是同样的道理，只是数量多、顺序有讲究。
 
 **参考骨架**：
 
+> [!note] 以下命令在 Git Bash 里跑（`$NDK` 是 bash 变量写法；cmd 用 `%NDK%`、PowerShell 用 `$env:NDK`）
+
 ```bash
 cat > mylib.c << 'EOF'
 int double_it(int x) { return x * 2; }

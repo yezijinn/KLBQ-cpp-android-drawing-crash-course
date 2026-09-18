@@ -43,6 +43,27 @@ aarch64-linux-android-addr2line
 
 路径通常在 `$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/`。
 
+> [!important] 三个终端的变量写法不同（本章命令必读）
+> 本章命令里会大量出现 `$NDK`（NDK 安装目录）。**它不是命令的一部分，是一个变量**，
+> 三个终端写法完全不同——写错会报「找不到命令」：
+>
+> | 终端 | 引用 NDK 变量 | 举例 |
+> |---|---|---|
+> | **Git Bash**（本教程默认） | `$NDK` | `$NDK/toolchains/.../nm.exe` |
+> | **cmd** | `%NDK%` | `%NDK%\toolchains\...\nm.exe` |
+> | **PowerShell** | `$env:NDK` | `$env:NDK\toolchains\...\nm.exe` |
+>
+> **Windows 下工具带 `.exe` 后缀**（如 `aarch64-linux-android-nm.exe`），
+> Git Bash 里可以不写后缀，cmd/PowerShell 里建议写全。
+> 若嫌变量麻烦，**直接写完整绝对路径**最稳妥：
+>
+```bash
+# Git Bash：直接写完整路径（把 C:/dev/android-ndk-r27c 换成你的实际路径）
+C:/dev/android-ndk-r27c/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android-nm.exe -C libfoo.so
+```
+>
+> 三个终端变量写法的完整对照见 [[第02章-装好第一套工具链]] 与 [[附录R-绝对零基础前置知识]] 3.2 节。
+
 ## nm：查符号
 
 ```bash

@@ -162,6 +162,9 @@ aarch64-linux-android-nm --print-size --size-sort app | grep -i 'std::' | tail
 
 如果选了 `c++_shared`：
 
+> [!note] 命令在 Git Bash 里跑（`$NDK` 是 bash 变量写法）
+> cmd 用 `%NDK%`、PowerShell 用 `$env:NDK`，对照见 [[第33章-NDK与第一条ndk-build]]。
+
 ```bash
 # 找到库
 cp $NDK/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so ./
