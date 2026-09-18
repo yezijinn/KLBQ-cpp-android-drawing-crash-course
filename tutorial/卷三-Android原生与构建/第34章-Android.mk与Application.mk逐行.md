@@ -302,6 +302,51 @@ ndk-build -B
 - [ ] **确认产物类型**：`grep BUILD_ Android.mk` → 末行是 `BUILD_EXECUTABLE`
 - [ ] **验证 c++20 生效**：`grep -n 'c++' Android.mk Application.mk` → 模块级 `c++20` 覆盖应用级 `c++17`
 
+## 多环境构建配置（Dev / Test / Prod）
+
+> [!note] 构建也分环境
+> 开发要调试信息、测试要断言、生产要体积最小——**同一套源码，构建选项不同**。
+> 本项目用 `APP_OPTIM` + 自定义宏 + 环境变量实现。
+
+**范式**（基于本项目 `Application.mk` 的真实字段扩展）：
+
+```makefile
+# 从环境变量选构建档（默认 release）
+BUILD_ENV ?= release
+
+ifeq ($(BUILD_ENV),debug)
+    APP_OPTIM := debug          # -O0 + 调试信息
+    APP_CPPFLAGS += -DDEBUG -g
+else ifeq ($(BUILD_ENV),test)
+    APP_OPTIM := release
+    APP_CPPFLAGS += -DNDEBUG=false   # 保留 assert
+else
+    APP_OPTIM := release        # 生产：优化 + 去符号
+    APP_LDFLAGS += -flto -Wl,--gc-sections -s
+endif
+```
+
+用法：
+
+```bash
+ndk-build BUILD_ENV=debug    # 开发版
+ndk-build BUILD_ENV=test     # 测试版（保留断言）
+ndk-build                    # 生产版（默认）
+```
+
+| 环境 | 优化 | 调试信息 | 断言 | 体积 |
+|---|---|---|---|---|
+| **Dev** | -O0 | 有 `-g` | 保留 | 大 |
+| **Test** | -O2 | 无 | 保留 | 中 |
+| **Prod** | -O2+LTO | strip | `NDEBUG` 关闭 | 小 |
+
+> [!tip] 环境选择的三种方式（由外到内）
+> ① **环境变量**（`BUILD_ENV=debug`）——最灵活，CI 友好；
+> ② **`.mk` 里的 ifeq**——按变量分支；
+> ③ **代码里的宏**（`#ifdef DEBUG`）——控制运行时行为。
+>
+> 三者配合：环境变量选档 → ifeq 设编译选项 → 宏控制代码分支。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束
