@@ -46,6 +46,112 @@ else           Uworld = syscall_read<uint64_t>(...);
 
 业务代码只认 `IDriver*`，运行时指向哪个后端由配置决定。
 
+## 坏味道重构推演：从稚嫩到优雅
+
+> [!tip] 为什么要看「稚嫩写法」
+> 理解设计模式最快的方式，是先看**没有它时**会写成什么样。
+> 下面从「初学者直觉写法」演进到「本项目的真实架构」，你会明白 `IDriver` 每一处设计的来由。
+
+### ❌ 稚嫩写法：硬编码 + if/else 分支
+
+初学者最常见的写法——所有逻辑塞进一个函数，用 `if/else` 区分后端：
+
+```cpp
+// ❌ 坏味道：业务逻辑与后端实现耦合，每处调用点都要判后端
+class MemoryTool {
+    bool useKernel;          // 硬编码选择方式
+    Driver* kernelDriver;    // 直接依赖具体类型
+    SysHal* syscallDriver;
+
+public:
+    uint64_t ReadUWorld(uint64_t base) {
+        if (useKernel) {
+            return kernelDriver->Read<uint64_t>(base + 0xB3EC650);
+        } else {
+            return syscallDriver->read<uint64_t>(base + 0xB3EC650);
+        }
+    }
+    Vec3 ReadPosition(uint64_t obj) {
+        if (useKernel) {                       // ← 每个方法都重复这段 if/else
+            return kernelDriver->Read<Vec3>(obj + 0x1F0);
+        } else {
+            return syscallDriver->read<Vec3>(obj + 0x1F0);
+        }
+    }
+    // ... 几十个方法，每个都复制一遍 if/else
+};
+```
+
+**坏味道清单**：
+
+| 坏味道 | 表现 | 后果 |
+|---|---|---|
+| 硬编码分支 | 每个方法都写 `if (useKernel)` | 加第三个后端要改**每一处** |
+| 重复代码 | `if/else` 块在几十个方法里复制 | 改一处漏一处 |
+| 依赖具体类 | 成员是 `Driver*`/`SysHal*` | 无法替换、无法 mock 测试 |
+| 职责过载 | 业务逻辑和传输逻辑混在一个类 | 单测要真机+root 才能跑 |
+
+### ✅ 优雅写法：本项目真实架构
+
+本项目把这些关注点**拆开**（`driver.h` / `MemDriver.h`）：
+
+```cpp
+// ✅ 优雅：业务只依赖抽象 IDriver（本项目真实定义）
+class IDriver {
+public:
+    virtual int Read(uint64_t address, void *buffer, size_t size) = 0;
+    virtual int Write(uint64_t address, void *buffer, size_t size) = 0;
+    virtual int GetPid(std::string_view packageName) = 0;
+    // ... 纯虚接口
+};
+
+// 业务代码：只认 IDriver*，一行都不关心后端是谁
+IDriver *dr = &g_driver;              // 全局唯一入口（draw_Gui.cpp）
+uint64_t Uworld = dr->Read<uint64_t>(base + 0xB3EC650);   // 换个后端，这行不变
+```
+
+本项目的 `MemDriver` 是**转发器**——内部持有 `Driver*` 或 `SysHal*`，把调用转过去：
+
+```cpp
+// ✅ MemDriver 内部按已选模式转发（真实项目 MemDriver.h）
+class MemDriver : public IDriver {
+    Driver *kernel_  = nullptr;
+    SysHal *syscall_ = nullptr;
+public:
+    int Read(uint64_t address, void *buffer, size_t size) override {
+        if (syscall_ != nullptr) {
+            return syscall_->read((uintptr_t)address, buffer, size) ? (int)size : -EIO;
+        }
+        if (kernel_ != nullptr) return kernel_->Read(address, buffer, size);
+        return -EIO;
+    }
+};
+```
+
+### 核心指标对比
+
+| 维度 | ❌ 稚嫩写法 | ✅ 本项目架构 |
+|---|---|---|
+| **可维护性** | 加后端改 N 处 | 加后端改 1 处（新增派生类） |
+| **可扩展性** | 硬编码 `bool useKernel`，最多 2 种 | 开闭原则，后端数量无上限 |
+| **单元测试便利度** | 必须真机 + root | 注入 `FakeDriver` 即可本机测 |
+| **代码重复** | 每个方法复制 `if/else` | 零重复，只在虚函数表分发 |
+| **依赖方向** | 业务 → 具体实现（倒挂） | 业务 → 抽象 ← 实现（倒置） |
+
+### 演进动因剖析
+
+> [!note] 为什么本项目最终采用 IDriver？
+> 1. **双后端是硬需求**：内核驱动快但要装驱动，系统调用无需驱动但慢——
+>    **两条路都必须支持**，且要运行时切换（`syscall驱动` 配置项）。
+> 2. **调用点极多**：`dr->Read` 遍布 `Draw_ESP` / `SilentAim` / `pXthread`，
+>    若每处都判后端，维护成本爆炸。
+> 3. **虚函数开销可忽略**：源码注释写明「每次接口内部都是几十微秒的驱动 I/O，
+>    虚函数那几纳秒开销完全可忽略」——**性能不构成反对理由**。
+> 4. **可测试性**：抽出 `IDriver` 后，能注入 `FakeDriver` 在本机验证业务逻辑（见课后习题 80.1）。
+>
+> **一句话**：当「多个可替换实现」+「大量调用点」+「需要测试」三者同时出现时，
+> 面向接口编程就是必然选择——这正是本项目采用它的原因。
+
 ## 本项目的接口定义
 
 > [!tip] 先看图，再看代码

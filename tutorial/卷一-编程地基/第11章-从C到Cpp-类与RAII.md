@@ -374,6 +374,104 @@ private:
 所以 `AndroidImgui` 是一个"接口"：规定了所有渲染后端必须提供哪些能力，
 具体实现交给 `VulkanGraphics`（第 58 章）。
 
+### 坏味道重构推演：从"每个后端各写一遍"到模板方法
+
+> [!tip] `AndroidImgui` 为什么把 `Create`/`Render` 设成私有纯虚？
+> 这是**模板方法模式**：基类定好「骨架流程」，子类只填「变化的那几步」。
+> 先看没有它会写成什么样。
+
+❌ **稚嫩写法：每个后端自己写完整初始化+渲染流程**
+
+```cpp
+// ❌ 坏味道：Vulkan 后端自己写一整套流程
+class VulkanRenderer {
+public:
+    void Run(ANativeWindow* w, float wd, float ht) {
+        ANativeWindow_acquire(w);            // ← 流程步骤 1
+        createVulkanInstance();              // ← Vulkan 专属
+        setupVulkanDevice();                 // ← Vulkan 专属
+        ImGui::CreateContext();              // ← 流程步骤 3
+        ImGui::GetIO().DisplaySize = {wd, ht};
+        while (running) { /* 渲染循环 */ }
+        ImGui::DestroyContext();
+        ANativeWindow_release(w);
+    }
+};
+
+// 若再加 OpenGL 后端，上面「acquire / CreateContext / DisplaySize / 循环 / 清理」
+// 又要原样抄一遍——只有中间几步不同，其余全是重复。
+```
+
+| 坏味道 | 后果 |
+|---|---|
+| 骨架流程重复 | 每个后端抄一遍 acquire/CreateContext/清理 |
+| 步骤顺序易错 | 漏了 acquire 或 release 就泄漏 |
+| 无统一入口 | 调用方要记住每个后端的启动函数名 |
+
+✅ **优雅写法：模板方法（本项目真实架构）**
+
+```cpp
+// ✅ AndroidImgui.h：基类定骨架（非虚的公开方法）+ 子类填步骤（私有纯虚）
+class AndroidImgui {
+public:
+    bool Init_Render(ANativeWindow *window, float width, float height);  // 骨架
+    void NewFrame(bool resize = false);
+    void EndFrame();
+    void Shutdown();
+private:
+    virtual bool Create() = 0;              // 子类填：后端初始化
+    virtual void Setup() = 0;               // 子类填：后端配置
+    virtual void Render(ImDrawData*) = 0;   // 子类填：后端绘制
+};
+```
+
+基类的 `Init_Render` 把「不变的部分」固化（真实源码 `AndroidImgui.cpp`）：
+
+```cpp
+// ✅ 骨架流程固化在基类：acquire → Create → CreateContext → Setup
+bool AndroidImgui::Init_Render(ANativeWindow *window, float width, float height) {
+    m_Window = window;
+    m_Width = width;  m_Height = height;
+    ANativeWindow_acquire(window);          // ① 不变
+    Create();                               // ② 变化 → 子类实现
+    ImGui::CreateContext();                 // ③ 不变
+    ImGui::GetIO().DisplaySize = {width, height};
+    Setup();                                // ④ 变化 → 子类实现
+    return true;
+}
+```
+
+子类只实现那几个纯虚步骤：
+
+```cpp
+// ✅ VulkanGraphics 只填「变化的那几步」
+class VulkanGraphics : public AndroidImgui {
+    bool Create() override { /* Vulkan 初始化 */ return true; }
+    void Setup()  override { /* Vulkan 配置 */ }
+    void Render(ImDrawData *d) override { /* Vulkan 绘制 */ }
+};
+```
+
+### 核心指标对比
+
+| 维度 | ❌ 各写一遍 | ✅ 模板方法 |
+|---|---|---|
+| **可维护性** | 改骨架要改 N 个后端 | 改骨架只改基类 1 处 |
+| **可扩展性** | 加后端抄一大段 | 加后端只填 3 个纯虚函数 |
+| **正确性** | 顺序易错、易泄漏 | 骨架唯一，不会漏步骤 |
+| **调用一致性** | 每个后端入口名不同 | 统一 `Init_Render`/`EndFrame` |
+
+### 演进动因剖析
+
+> [!note] 为什么本项目用模板方法？
+> 1. **流程骨架是固定的**：不管什么后端，都要「获取窗口 → 创建上下文 → 配置 → 渲染循环 → 清理」。
+> 2. **差异点是局部的**：只有 `Create`/`Setup`/`Render` 等几步随后端变。
+> 3. **防错**：把 `ANativeWindow_acquire`/`release` 这类易漏的步骤**锁进基类**，
+>    子类想漏都漏不掉——这正是 RAII 思想在「流程」上的延伸。
+>
+> **一句话**：当「流程骨架相同、个别步骤不同」时，用模板方法——
+> **基类控制流程，子类实现变化**。本项目 `AndroidImgui` 就是这样统一了渲染后端。
+
 ## 继承与多态
 
 ```cpp

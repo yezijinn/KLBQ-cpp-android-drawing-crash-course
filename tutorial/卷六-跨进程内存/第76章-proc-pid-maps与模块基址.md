@@ -523,6 +523,128 @@ uint64_t FindModuleBase(int pid, const char* name) {
 > 理解两级定位：**maps 定位"模块从哪开始"，ELF 符号定位"模块里某函数在哪"**。
 > 单独用任一级都不够。
 
+## 自动化单元自测
+
+> [!tip] 本节可独立编译运行
+> 对应本章核心单元：ParseMaps(解析 maps 行)、FindModuleBase(找模块基址)。
+> 用一段固定的 maps 文本做输入，验证解析字段和基址选取逻辑。
+
+### 测试脚本（保存为 ch76_test.cpp）
+
+```cpp
+// ch76_test.cpp —— 第76章 maps 解析单元自测（自包含）
+#include <cstdio>
+#include <cassert>
+#include <cstdint>
+#include <cstring>
+#include <vector>
+#include <string>
+
+struct MapRegion {
+    uint64_t start = 0, end = 0;
+    uint8_t  perms = 0;         // 位: 1=R 2=W 4=X
+    bool     isPrivate = false;
+    std::string path;
+};
+
+// ===== 被测单元1：解析一行 maps =====
+// 格式: start-end perms offset dev:dev inode path
+bool ParseMapLine(const char* line, MapRegion& r) {
+    unsigned long long s, e, off, ino;
+    unsigned dmaj, dmin;
+    char perms[8] = {};
+    char path[512] = {};
+    int n = std::sscanf(line, "%llx-%llx %7s %llx %x:%x %llu %511s",
+                        &s, &e, perms, &off, &dmaj, &dmin, &ino, path);
+    if (n < 7) return false;
+    r.start = s; r.end = e;
+    r.perms = 0;
+    if (perms[0]=='r') r.perms |= 1;
+    if (perms[1]=='w') r.perms |= 2;
+    if (perms[2]=='x') r.perms |= 4;
+    r.isPrivate = (perms[3]=='p');
+    if (n >= 8) r.path = path;
+    return true;
+}
+
+// ===== 被测单元2：找模块基址（取第一个映射段起点 = ELF 头处）=====
+uint64_t FindModuleBase(const std::vector<MapRegion>& maps, const std::string& name) {
+    uint64_t base = 0;
+    for (const auto& r : maps) {
+        if (r.path.empty()) continue;
+        if (r.path.length() < name.length()) continue;
+        size_t pos = r.path.length() - name.length();
+        if (pos > 0 && r.path[pos-1] != '/') continue;
+        if (r.path.compare(pos, name.length(), name) != 0) continue;
+        if (base == 0 || r.start < base) base = r.start;   // 取最小起点
+    }
+    return base;
+}
+
+int main() {
+    // Arrange: 一段典型 libc.so 的多段映射
+    std::vector<MapRegion> maps;
+    MapRegion r;
+    ParseMapLine("7a1c000000-7a1c010000 r--p 00000000 00:00 0 /system/lib64/libc.so", r); maps.push_back(r);
+    ParseMapLine("7a1c010000-7a1c100000 r-xp 00010000 00:00 0 /system/lib64/libc.so", r); maps.push_back(r);
+    ParseMapLine("7a1c110000-7a1c120000 r--p 00010000 00:00 0 /system/lib64/libc.so", r); maps.push_back(r);
+    ParseMapLine("7a1c120000-7a1c130000 rw-p 00010000 00:00 0 /system/lib64/libc.so", r); maps.push_back(r);
+
+    // ===== 正常路径 =====
+    // 1. 第一行权限 = r--p（只读私有），perms=1
+    assert(maps[0].perms == 1 && maps[0].isPrivate);
+    std::printf("[PASS] 解析 r--p 权限\n");
+
+    // 2. 第二行权限 = r-xp（可执行），perms=5
+    assert(maps[1].perms == 5 && maps[1].isPrivate);
+    std::printf("[PASS] 解析 r-xp 权限\n");
+
+    // 3. 基址 = 第一个映射段起点（含 ELF 头），不是 r-xp 段
+    uint64_t base = FindModuleBase(maps, "libc.so");
+    assert(base == 0x7a1c000000ULL);
+    assert(base == maps[0].start);         // 第一段起点
+    std::printf("[PASS] 基址取第一个映射段起点\n");
+
+    // 4. 后缀匹配：找 libc.so 不应命中 libc.so.1
+    MapRegion r2;
+    ParseMapLine("7a2c000000-7a2c010000 r--p 0 00:00 0 /system/lib64/libc.so.1", r2);
+    std::vector<MapRegion> maps2 = { r2 };
+    assert(FindModuleBase(maps2, "libc.so") == 0);   // 不匹配（前一个是 . 不是 /）
+    std::printf("[PASS] 后缀精确匹配（不误命中 .1）\n");
+
+    // ===== 反向异常路径 =====
+    // 5. 空行/格式错误应返回 false
+    assert(!ParseMapLine("garbage", r));
+    std::printf("[PASS] 反向: 非法行被拒绝\n");
+
+    // 6. 找不到模块返回 0
+    assert(FindModuleBase(maps, "libnotexist.so") == 0);
+    std::printf("[PASS] 反向: 模块不存在返回 0\n");
+
+    std::printf("\n第76章 全部断言通过\n");
+    return 0;
+}
+```
+
+### 执行指引
+
+```bash
+g++ -std=c++17 -Wall ch76_test.cpp -o ch76_test && ./ch76_test
+```
+
+**预期成功输出**：
+
+```text
+[PASS] 解析 r--p 权限
+[PASS] 解析 r-xp 权限
+[PASS] 基址取第一个映射段起点
+[PASS] 后缀精确匹配（不误命中 .1）
+[PASS] 反向: 非法行被拒绝
+[PASS] 反向: 模块不存在返回 0
+
+第76章 全部断言通过
+```
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

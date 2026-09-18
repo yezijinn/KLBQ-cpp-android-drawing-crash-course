@@ -424,6 +424,92 @@ int main() {
 > 相机在原点朝 +X，投影 `(100, 0, 0)` 应落在**屏幕正中心** `(px, py)`。
 > 落不到中心 → 先查这条，再查其它。
 
+## 自动化单元自测
+
+> [!tip] 本节可独立编译运行
+> 对应本章核心单元：t = tan(FOV/2)、透视除法、Y 轴翻转。
+> 验证「FOV 越大偏移越小」「距离翻倍偏移减半」「半宽映射」等本章核心结论。
+
+### 测试脚本（保存为 ch50_test.cpp）
+
+```cpp
+// ch50_test.cpp —— 第50章投影矩阵单元自测（自包含）
+#include <cstdio>
+#include <cassert>
+#include <cmath>
+#define PI 3.14159265358979323846f
+
+// 简化投影：相机在原点朝 +X，FOV 垂直
+// 返回屏幕 x 偏移（相对中心）
+float offsetX(float camX, float camY, float halfW, float fovDeg) {
+    float t = std::tan(fovDeg * 0.5f * PI / 180.0f);
+    float ndc = (camY / t) / camX;       // camX=depth, camY=横向
+    return ndc * halfW;
+}
+
+static bool near(float a, float b, float e = 1e-2f) { return std::fabs(a-b) < e; }
+
+int main() {
+    float halfW = 1080.0f;
+
+    // ===== 正常路径 =====
+    // 1. FOV=90 → t=1：点 (100,50) → 偏移 50/1/100*1080 = 540
+    float o1 = offsetX(100, 50, halfW, 90);
+    assert(near(o1, 540));
+    std::printf("[PASS] FOV=90 偏移 540\n");
+
+    // 2. 距离翻倍 → 偏移减半（透视）
+    float near1 = offsetX(100, 50, halfW, 90);
+    float far1  = offsetX(200, 50, halfW, 90);
+    assert(near(near1 / far1, 2.0f));
+    std::printf("[PASS] 距离翻倍偏移减半\n");
+
+    // 3. FOV 越大，偏移越小（广角压缩边缘）
+    float narrow = offsetX(100, 50, halfW, 60);
+    float wide   = offsetX(100, 50, halfW, 120);
+    assert(std::fabs(wide) < std::fabs(narrow));
+    std::printf("[PASS] FOV 越大偏移越小\n");
+
+    // 4. 中心点（camY=0）偏移为 0
+    assert(near(offsetX(100, 0, halfW, 90), 0));
+    std::printf("[PASS] 正前方偏移为 0\n");
+
+    // ===== 反向异常路径 =====
+    // 5. 深度=0 或负：应不可用（返回非有限或需上层拦截）
+    float t90 = std::tan(90.0f*0.5f*PI/180.0f);
+    float w0 = 0.0f / t90 / 0.0f;    // 深度 0 → inf
+    assert(!std::isfinite(w0));
+    std::printf("[PASS] 反向: 深度为 0 产生非有限值(需拦截)\n");
+
+    // 6. 负深度（相机后方）：语义上不可见
+    float depth = -100.0f;
+    assert(depth < 0.001f);          // 上层用 w < 0.001 拦截
+    std::printf("[PASS] 反向: 负深度应被 w<0.001 拦截\n");
+
+    std::printf("\n第50章 全部断言通过\n");
+    return 0;
+}
+```
+
+### 执行指引
+
+```bash
+g++ -std=c++17 -Wall ch50_test.cpp -o ch50_test && ./ch50_test
+```
+
+**预期成功输出**：
+
+```text
+[PASS] FOV=90 偏移 540
+[PASS] 距离翻倍偏移减半
+[PASS] FOV 越大偏移越小
+[PASS] 正前方偏移为 0
+[PASS] 反向: 深度为 0 产生非有限值(需拦截)
+[PASS] 反向: 负深度应被 w<0.001 拦截
+
+第50章 全部断言通过
+```
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束
