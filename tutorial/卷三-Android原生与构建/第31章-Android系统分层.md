@@ -54,6 +54,13 @@ aliases: [ch31]
 | **Parcel** | （包裹） | Binder 通信里"打包数据"的容器，类似一个可跨进程传的结构体 |
 | **IBinder** | （Binder 接口对象） | 一个"可以跨进程传递的对象引用"，拿着它就能调用别的进程的服务 |
 | **UID** | User Identifier（用户标识） | Linux 里标识"你是谁"的编号。Android 给每个 App 分一个独立 UID |
+| **ART** | Android Runtime（安卓运行时） | Android 上跑 Java/Kotlin 代码的虚拟机（类似 JVM），每个 App 都在它里面运行 |
+| **Binder** | （无缩写，就是"粘合剂"） | Android 跨进程通信（IPC）的主力机制，几乎所有系统服务调用都走它（本章下文详解） |
+| **Gralloc** | Graphics Memory Allocator（图形内存分配器） | 负责分配"屏幕图像"所需显存缓冲的硬件抽象模块 |
+| **libEGL / libGLESv2** | （OpenGL ES 相关库） | 让程序用 OpenGL ES 做 2D/3D 绘制的系统库（图形渲染的通用接口） |
+| **libvulkan** | （Vulkan 库） | 比 OpenGL ES 更新的图形 API 库，本项目用它绘制覆盖层（卷五讲） |
+| **libc++** | （C++ 标准库） | Android 上的 C++ 标准库实现（`std::vector` 等就在这里，第 40 章讲） |
+| **zygote** | （受精卵/孵化器） | Android 的"App 孵化器"进程，所有 App 都由它 fork 出来（下文"关键系统服务"讲） |
 
 > [!tip] 记不住没关系
 > 这些缩写**后面每一章都会反复出现**，见得多了自然记住。
