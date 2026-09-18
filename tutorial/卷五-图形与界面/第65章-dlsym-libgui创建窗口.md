@@ -306,6 +306,63 @@ aarch64-linux-android-nm -D -C /tmp/libgui.so | grep createSurface
 aarch64-linux-android-nm -D -C /tmp/libgui.so | grep -c 'createSurface'
 ```
 
+## 运行轨迹透视
+
+> [!tip] libgui 层用另一套日志宏：SURFACE_LOG_*（ANativeWindowCreator.h）
+> 本项目有**两套日志体系**：
+> - **driver.h**：`LS_LOGI_TAG`/`LS_LOGE_TAG`（内存驱动，卷六）
+> - **ANativeWindowCreator.h**：`SURFACE_LOG_{ERROR,WARN,INFO,DEBUG,TRACE}`（图形层，本章）
+> 后者是**五级 + 编译开关**，每级带固定前缀 `[-]`/`[!]`/`[+]`/`[*]`/`[=]`。
+
+### 真实项目的日志宏（ANativeWindowCreator.h）
+
+```cpp
+// 五级日志宏，带统一前缀，可编译期整体关闭
+#define SURFACE_LOG_ERROR(fmt, ...) \
+    __android_log_print(ANDROID_LOG_ERROR, SURFACE_LOG_TAG, "[-] " fmt, ##__VA_ARGS__)
+#define SURFACE_LOG_WARN(fmt, ...)  \
+    __android_log_print(ANDROID_LOG_WARN,  SURFACE_LOG_TAG, "[!] " fmt, ##__VA_ARGS__)
+#define SURFACE_LOG_INFO(fmt, ...)  \
+    __android_log_print(ANDROID_LOG_INFO,  SURFACE_LOG_TAG, "[+] " fmt, ##__VA_ARGS__)
+#define SURFACE_LOG_DEBUG(fmt, ...) \
+    __android_log_print(ANDROID_LOG_DEBUG, SURFACE_LOG_TAG, "[*] " fmt, ##__VA_ARGS__)
+
+// 符号解析失败时（真实项目 ResolveMethod 宏）
+SURFACE_LOG_ERROR("Method not found: %s -> %s::%s", MethodSignature, #ClassName, #MethodName);
+
+// 图层创建成功（真实项目）
+SURFACE_LOG_INFO("ANativeWindow created successfully: %p", nativeWindow);
+
+// 窗口尺寸（真实项目）
+SURFACE_LOG_INFO("Mirror surface size: %d x %d", width, height);
+```
+
+### 成功路径的真实 logcat 输出
+
+```bash
+adb logcat -s AImGui:D *:S
+```
+
+```text
+[+] ANativeWindow created successfully: 0x7a1c2e0000
+[+] Mirror surface size: 1080 x 2400
+[*] ZoomSurface called with scaleX: 1.000000, scaleY: 1.000000
+```
+
+### 失败路径的真实 logcat 输出
+```text
+[-] Method not found: _ZN7android21SurfaceComposerClient13createSurfaceE... -> SurfaceComposerClient::createSurface
+[-] Failed to create surface: MirrorRoot@1
+[-] Failed to get native window from surface control
+[-] Unsupported system version: 4
+```
+
+> [!note] 关键观测点
+> - **tag 是 `AImGui`**（`SURFACE_LOG_TAG`），与内存层的 `Driver` 区分；
+> - **前缀一眼辨级**：`[-]`错误、`[!]`警告、`[+]`信息、`[*]`调试；
+> - **编译期可整体关闭**：`SURFACE_LOG_ENABLE 0` 时所有宏变空（第 10 章宏开关）；
+> - **符号解析失败带完整 mangled 名**——这是排查跨版本问题的关键线索（第 66 章）。
+
 ## 动手：符号侦察器
 
 > [!important] 前置条件

@@ -363,6 +363,53 @@ regions.resize(mergedCount);
 第 3 项特别有用——**对比游戏启动前后的 maps**，
 能看出它加载了哪些库（这是分析的第一步）。
 
+## 运行轨迹透视
+
+> [!tip] memview 是命令行工具，但它背后的驱动调用应记录结构化日志
+> 命令行程序的**用户可见输出**用 printf 没问题；
+> 但一旦这段逻辑被集成进 driver.h（真实项目就是如此），
+> 就该换成本项目的 LS_LOGI_TAG / LS_LOGE_TAG，让它出现在 logcat 里。
+
+### 真实项目的日志形态（driver.h GetModuleAddress）
+
+```cpp
+// 成功：逐模块打印区段（driver.h 真实代码）
+LS_LOGI_TAG("Driver", "模块索引=%d 名称=%s 区段数量=%d", i, mod.name, mod.seg_count);
+LS_LOGI_TAG("Driver", "区段[%d] index=%d start=0x%016llX end=0x%016llX size=0x%llX (%llu bytes) prot=%d",
+            j, seg.index,
+            (unsigned long long)seg.start, (unsigned long long)seg.end,
+            (unsigned long long)(seg.end - seg.start),
+            (unsigned long long)(seg.end - seg.start), seg.prot);
+
+// 失败：未找到模块/区段（driver.h 真实代码）
+LS_LOGE_TAG("Driver", "模块 '%.*s' 中未找到区段索引 %d",
+            (int)moduleName.size(), moduleName.data(), segmentIndex);
+LS_LOGE_TAG("Driver", "未找到模块 '%.*s'", (int)moduleName.size(), moduleName.data());
+```
+
+### 成功路径的真实 logcat 输出
+
+```text
+I/Driver  ( 8123): 模块索引=0 名称=libUE4.so 区段数量=4
+I/Driver  ( 8123): 区段[0] index=0 start=0x0000007A1C000000 end=0x0000007A1C010000 size=0x10000 (65536 bytes) prot=1
+I/Driver  ( 8123): 区段[1] index=1 start=0x0000007A1C010000 end=0x0000007A1C100000 size=0xF0000 (983040 bytes) prot=5
+I/Driver  ( 8123): 区段[2] index=2 start=0x0000007A1C110000 end=0x0000007A1C120000 size=0x10000 (65536 bytes) prot=1
+```
+
+### 失败路径的真实 logcat 输出
+
+```text
+E/Driver  ( 8123): 模块 libUE4.so 中未找到区段索引 9
+E/Driver  ( 8123): 未找到模块 libNotExist.so
+E/Driver  ( 8123): 获取内存信息失败
+```
+
+> [!note] 关键观测点
+> - **tag 用模块名**（Driver/Dump）区分「谁在说话」；
+> - **地址统一 0x%016llX 补零到 16 位**，方便肉眼对齐；
+> - **失败必带具体名字**（%.*s 打印 string_view），而非笼统的「失败」——
+>   这是 driver.h 的规范：**每条 ERROR 都要能独立定位问题**。
+
 ## 动手验证清单
 
 - [ ] **看 maps 格式**：`adb shell cat /proc/self/maps | head -5` → 每行含 起始-结束 权限 偏移 路径

@@ -299,6 +299,74 @@ adb logcat -v time          # 01-14 01:23:45.678  1234  1234 I Tag: msg
 adb logcat -v threadtime    # 带线程名（推荐）
 ```
 
+## 本项目的两套日志体系（重点）
+
+> [!tip] 本项目不是「一套宏打天下」，而是分层的两套
+> 这是生产级日志的常见做法：**不同子系统用不同 tag、不同前缀**，
+> 这样 logcat 过滤时能一眼分清是谁在说话。
+
+| 体系 | 定义位置 | 宏 | 前缀 | 用途 |
+|---|---|---|---|---|
+| **驱动层** | driver.h | LS_LOGI_TAG / LS_LOGE_TAG | 无 | 内存读写、模块解析（卷六） |
+| **图形层** | ANativeWindowCreator.h | SURFACE_LOG_{ERROR,WARN,INFO,DEBUG,TRACE} | [-] [!] [+] [*] [=] | 图层创建、镜像、符号解析（卷五） |
+
+两套都是「tag + 格式化 + 编译开关」的同一模式，只是**前缀风格**不同：
+
+```cpp
+// 驱动层：tag 作为运行时参数传入，灵活
+LS_LOGI_TAG("Driver", "驱动已经连接");
+LS_LOGE_TAG("Dump",   "无法创建 /sdcard/dump: %s", std::strerror(errno));
+
+// 图形层：tag 固定为 SURFACE_LOG_TAG，等级体现在前缀
+#define SURFACE_LOG_TAG "AImGui"
+SURFACE_LOG_ERROR("Failed to create surface: %s", name);       // 输出 [-] ...
+SURFACE_LOG_INFO("ANativeWindow created successfully: %p", w);  // 输出 [+] ...
+```
+
+## 运行轨迹透视
+
+> [!tip] 一次完整启动的日志全景
+> 把两套体系串起来，看程序启动时 logcat 里**依次**会出现什么。
+> 这就是「可观测性」——不看代码，光看日志就知道程序走到哪了。
+
+```bash
+# 同时订阅两个 tag，看清启动全流程
+adb logcat -s AImGui:D Driver:D Dump:E *:S
+```
+
+```text
+# —— 阶段1：图形初始化（图形层 AImGui）——
+[+] ANativeWindow created successfully: 0x7a1c2e0000
+[+] Mirror surface size: 1080 x 2400
+
+# —— 阶段2：驱动握手（驱动层 Driver）——
+I/Driver  ( 8123): 分配虚拟地址成功: 地址=0x2025827000 大小=4144
+I/Driver  ( 8123): 当前进程 PID=8123，等待驱动握手
+I/Driver  ( 8123): 驱动已经连接
+
+# —— 阶段3：模块解析（驱动层 Driver）——
+I/Driver  ( 8123): 模块索引=0 名称=libUE4.so 区段数量=4
+```
+
+### 出错时的日志（能一眼定位阶段）
+
+```text
+# 图形初始化失败
+[-] Method not found: _ZN7android21SurfaceComposerClient13createSurfaceE...
+[-] Failed to create surface: MirrorRoot@1
+
+# 驱动握手失败（无内核驱动）
+I/Driver  ( 8123): 当前进程 PID=8123，等待驱动握手
+# ← 卡在这里不再往下（握手循环永久阻塞，本项目已知缺陷，见第79章）
+```
+
+> [!note] 可观测性的三个关键点（本项目实践）
+> 1. **分阶段**：每条日志都标明了「现在在哪个阶段」（图形/驱动/模块）；
+> 2. **tag 分区**：AImGui vs Driver 让人一眼分清子系统；
+> 3. **失败可定位**：失败日志**必带具体名字/地址**，而非笼统的「出错了」。
+>
+> 这就是从「黑盒」到「白盒」——**日志的粒度决定排查的速度**。
+
 ## 动手：做一个分级日志模块
 
 要求：
