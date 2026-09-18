@@ -382,6 +382,28 @@ dr->Read<uint64_t>(addr);
 dr->GetPid("...");
 ```
 
+> [!danger] 【安全最佳实践】GetPid 的实现不能用字符串拼接执行命令
+> **威胁机制（命令注入）**：本项目的系统调用后端 `SysHal::getPID` 若这样实现——
+> ```c
+> char cmd[0x100] = "pidof ";
+> strcat(cmd, PackageName);      // ⚠️ 把外部输入直接拼进命令
+> popen(cmd, "r");               // ⚠️ 交给 shell 执行
+> ```
+> 一旦 `PackageName` 来自不可信来源（配置文件、网络、用户输入），
+> 攻击者可传入 `com.x; rm -rf /data` 之类，**shell 会执行分号后的任意命令**。
+>
+> **规避原则**：
+> - **包名必须白名单校验**（只允许 `[A-Za-z0-9._]`），拒绝含 `; & | $ 空白` 等元字符的输入；
+> - 更稳的做法是**不用 shell**：直接遍历 `/proc/<pid>/cmdline` 匹配包名（本项目内核驱动的 `GetPid` 就是遍历实现，无注入面）；
+> - 若必须调外部命令，用 `execve` 传参数数组，绕开 shell 解析。
+>
+> ```c
+> // ✅ 安全写法：遍历 /proc 匹配，不经 shell
+> for each pid in /proc:
+>     read /proc/<pid>/cmdline;
+>     if (cmdline == packageName) return pid;   // 精确匹配，无注入
+> ```
+
 ## 专属能力怎么访问
 
 内核专属功能需要拿到具体类型：
