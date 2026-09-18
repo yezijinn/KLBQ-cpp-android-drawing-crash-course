@@ -379,6 +379,54 @@ debug 版会明显更大（带调试信息），且可以用 `addr2line` 精确�
 > clang 找不到 → PATH 或路径写错；push 后不能执行 → 忘了 `chmod 755`；
 > `No such file` 但文件在 → `/sdcard` 是 noexec，换 `/data/local/tmp`。
 
+## 课后习题
+
+### 习题 33.1 改 API level 编译并对比（★★，应用变式）
+
+**任务要求**：用路线 A 的 clang 分别以 `android21` 和 `android25` 为最低 API 编译同一个 `hello.c`，
+记录两次产物，回答：
+
+1. 两个产物大小是否不同？为什么？
+2. 把 `android25` 版 push 到一台 **Android 8（API 26）** 设备能跑吗？`android21` 版呢？
+3. 把 `android21` 版 push 到一台 **Android 4.4（API 19）** 设备能跑吗？为什么？
+
+**参考骨架**：
+
+```bash
+$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android21-clang.cmd \
+    hello.c -o hello_21 -llog
+$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android25-clang.cmd \
+    hello.c -o hello_25 -llog
+ls -l hello_21 hello_25
+```
+
+**验证断言**：
+- 两个产物应都能在 API ≥ 25 的设备上跑；
+- `android21` 版应也能在 API 21~24 的设备上跑（因为最低版本更低）；
+- 推到 API 19 设备应失败（"编译时最低版本 > 设备版本"）。
+
+### 习题 33.2 诊断"命令找不到"（★★★，分析）
+
+**场景**：你昨天设好 `export NDK=...` 并成功编出了 `hello_arm64`。
+今天新开一个终端敲 `ndk-build`，报 `command not found`。
+
+**任务要求**：
+1. 用本章"环境变量"一节的原理，解释**为什么**会这样；
+2. 给出**两种**修复方式（临时 vs 永久），并说明各自的适用场景；
+3. 如果你换到 PowerShell 窗口，修复命令该怎么写？（写出具体命令）
+
+**参考骨架**：
+
+| 修复方式 | 命令 | 适用 |
+|---|---|---|
+| 临时（当前窗口） | 重新 `export NDK=...; export PATH=$NDK:$PATH` | 今天就想跑一次 |
+| 永久（系统变量） | 加进系统环境变量（第 02 章） | 长期使用 |
+| PowerShell 临时 | `$env:NDK="C:\dev\android-ndk-r27c"; $env:PATH="$env:NDK;$env:PATH"` | 用 PS 的人 |
+
+> [!tip] 这道题的核心
+> **环境变量不是"装好就永久存在"的**——它绑定在"当前终端会话"上。
+> 理解这一点，你就不会再被"昨天还能用今天就不行"迷惑。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

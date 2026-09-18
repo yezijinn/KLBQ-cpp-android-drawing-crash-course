@@ -385,17 +385,21 @@ for (int i = 0; i < 100; i++)
 #include <atomic>
 
 struct RateLimiter {
-    std::atomic<long long> lastMs{0};
-    int minIntervalMs;   // 同一 tag 两次日志最小间隔
+    // ★ 成员顺序与默认值要小心：minIntervalMs 放在前面并给默认值，
+    //   这样 static RateLimiter _rl; 默认构造时就是 1000ms，不会踩到 0。
+    int minIntervalMs = 1000;            // 同一 tag 两次日志最小间隔（毫秒）
+    std::atomic<long long> lastMs{0};    // 上次输出时刻（毫秒）
+
     bool ok() {
         // TODO: 用 steady_clock 算当前 ms，与 lastMs 比较
         // 达到间隔才返回 true 并更新 lastMs
     }
 };
 
-// 限频日志宏（每秒最多一条）
+// 限频日志宏（默认每秒最多一条）
+// 用默认构造：minIntervalMs=1000、lastMs=0 —— 干净且无聚合初始化顺序陷阱
 #define LOGI_THROTTLE(tag, ...) do { \
-    static RateLimiter _rl{1000}; \
+    static RateLimiter _rl; \
     if (_rl.ok()) __android_log_print(ANDROID_LOG_INFO, tag, __VA_ARGS__); \
 } while(0)
 ```
@@ -412,6 +416,48 @@ for (int i = 0; i < 100; i++) LOGI_THROTTLE("Test", "第 %d 次", i);
 | 限频生效 | 1 秒内同 tag 只 1 条 |
 | `static` 保证每处调用独立 | 不同调用点互不影响 |
 | 间隔可配置 | 改 `minIntervalMs` 生效 |
+
+## 课后习题
+
+### 习题 38.1 实现"限频 + 等级开关"日志（★★，应用变式）
+
+**任务要求**：在"动手演练"的 `RateLimiter` 骨架上补完 `ok()`，让限频生效。
+
+**参考实现**：
+
+```cpp
+bool ok() {
+    using namespace std::chrono;
+    long long now = duration_cast<milliseconds>(
+        steady_clock::now().time_since_epoch()).count();
+    long long last = lastMs.load();
+    if (now - last < minIntervalMs) return false;
+    lastMs.store(now);
+    return true;
+}
+```
+
+**验证断言**：`for (int i=0;i<100;i++) LOGI_THROTTLE("Test","第 %d 次", i);` 一秒内只输出 1 条。
+
+### 习题 38.2 分析 %s 与 %.*s 的越界（★★★，分析）
+
+**任务要求**：解释下面两行为什么一行错一行对，并说明**错的那行具体会读到哪里**：
+
+```cpp
+std::string_view sv = someBuffer;   // 不保证有 '\0'
+LOGI("模块: %s", sv.data());        // 错
+LOGI("模块: %.*s", (int)sv.size(), sv.data());  // 对
+```
+
+**参考答案要点**：
+- `%s` 只拿到一个指针，**不知道长度**，会从首字符一直读到碰见 `\0` 才停；
+- `string_view` 不保证末尾有 `\0` → 会**读越界**，直到内存里偶然出现的 0；
+- 表现：可能多打几百个乱码，或 `SIGSEGV`；
+- `%.*s` 用精度参数**显式给出长度**，只读 `size` 个字符，安全。
+
+> [!tip] 评价层要点
+> 这是"**看起来能跑**"的典型 bug——调试时后面恰好有 `\0`，一切正常；
+> 换个输入就崩。**判断标准不是"当前能不能跑"，而是"有没有依赖未定义行为"。**
 
 ## 本章小结
 

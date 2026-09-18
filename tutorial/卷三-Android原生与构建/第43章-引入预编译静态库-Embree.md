@@ -340,6 +340,50 @@ Embree 的 6 个库也是同样的道理，只是数量多、顺序有讲究。
 > [!danger] 顺序错了会满屏 undefined reference
 > 若确实顺序正确还报错，用 `-Wl,--start-group ... --end-group` 包住，或 `nm -u libembree4.a` 查它还需要什么。
 
+## 课后习题
+
+### 习题 43.1 从零引入一个自定义静态库（★★，应用变式）
+
+**任务要求**：按本章"动手"，自己造一个 `libmylib.a`，走完"造库 → 声明 → 引用 → 编译"全流程。
+
+**参考骨架**：
+
+```bash
+cat > mylib.c << 'EOF'
+int double_it(int x) { return x * 2; }
+EOF
+$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android21-clang -c mylib.c -o mylib.o
+$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-ar rcs libmylib.a mylib.o
+```
+
+```makefile
+include $(CLEAR_VARS)
+LOCAL_MODULE := mylib_prebuilt
+LOCAL_SRC_FILES := include/Mine/libmylib.a
+include $(PREBUILT_STATIC_LIBRARY)
+```
+
+**验证断言**：**故意先不加** `LOCAL_STATIC_LIBRARIES`，看到 `undefined reference to 'double_it'`；补上后编译通过。
+
+### 习题 43.2 分析链接顺序（★★★，分析）
+
+**场景**：6 个 Embree 库，正确的 `LOCAL_STATIC_LIBRARIES` 顺序是
+`embree → lexers → math → sys → task → simd`。若把 `simd` 放到最左边，会怎样？
+
+**任务要求**：
+1. 用第 28 章的"被依赖的库放右边"规则，解释为什么会链接失败；
+2. 给出两种修复方式（调整顺序 / `--start-group`）；
+3. 说明"怎么知道谁依赖谁"（用什么命令查）。
+
+**参考答案要点**：
+1. 链接器从左到右扫描，遇到未解析符号只**向右**找；`simd` 在左时它的符号需求已"过了"后续库；
+2. 修复：把 `simd` 移到最右，或用 `-Wl,--start-group ... --end-group` 包住；
+3. 用 `nm -u libembree4.a` 看它**未定义**的符号，即它需要别人提供的。
+
+> [!tip] 评价层要点
+> 链接顺序问题之所以"诡异"，是因为**报错信息不指向顺序**——它只说"undefined reference"。
+> 能凭"谁依赖谁"的图去推理，才是真正理解链接过程。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

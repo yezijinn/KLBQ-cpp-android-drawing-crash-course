@@ -372,6 +372,51 @@ adb shell /data/local/tmp/embree_demo
 > [!warning] 手机上必须限制线程数
 > 默认会用满所有核心，在手机上可能导致线程爆炸。本项目设 `threads` 上限。
 
+## 课后习题
+
+### 习题 97.1 用 Occluded 判定"是否被挡住"（★★，应用变式）
+
+**任务要求**：本项目做遮挡判定只需"有没有被挡"，不需要"最近命中点"。
+用 `rtcOccluded1` 改写本章的查询示例。
+
+**参考骨架**：
+
+```cpp
+RTCOccludedArguments args;
+rtcInitOccludedArguments(&args);
+
+RTCRay ray;
+ray.org_x = 0; ray.org_y = 0; ray.org_z = 0;
+ray.dir_x = 0; ray.dir_y = 0; ray.dir_z = 1;
+ray.tnear = 0;
+ray.tfar  = 1000;
+ray.mask  = -1;
+ray.flags = 0;
+
+rtcOccluded1(scene, &ray, &args);      // 只判断"有没有挡"
+bool blocked = (ray.tfar < 0.0f);      // 被挡时 tfar 被置为 -inf
+printf("被遮挡: %s\n", blocked ? "是" : "否");
+```
+
+**验证断言**：正对三角形返回"被遮挡"；射偏返回"未遮挡"；耗时约为 `rtcIntersect1` 的 1/2~1/3。
+
+### 习题 97.2 分析"遮挡判定为什么用 Occluded 而不是 Intersect"（★★★，分析+评价）
+
+**任务要求**：分析：
+
+1. `rtcIntersect1` 和 `rtcOccluded1` 的核心区别是什么？
+2. 对"判断是否被墙挡住"这个需求，哪个更合适？
+3. 性能差异从哪来？
+
+**参考答案要点**：
+1. `Intersect` 求**最近的命中点**（要遍历到找到最近），`Occluded` 只判断**有没有命中**（找到一个就可提前退出）；
+2. 遮挡判定只需要布尔结果 → `Occluded` 更合适；
+3. `Occluded` 找到第一个命中就停，**不用继续搜索更近的**，所以快 2~3 倍。
+
+> [!tip] 评价层要点
+> 这是"**用最小计算满足需求**"的工程思维：
+> 需求是布尔值，就不要算完整结果。选对 API，性能白得 2~3 倍。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

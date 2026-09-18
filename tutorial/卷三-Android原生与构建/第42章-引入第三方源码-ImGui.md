@@ -313,6 +313,47 @@ include $(BUILD_EXECUTABLE)
 > [!warning] 4 个核心 .cpp 缺一不可
 > 少了 `imgui_draw`/`imgui_tables`/`imgui_widgets` 任一 → `undefined reference`。
 
+## 课后习题
+
+### 习题 42.1 搭一个最小 ImGui 工程（★★，应用变式）
+
+**任务要求**：把 ImGui 核心 4 个 `.cpp`（`imgui`/`imgui_draw`/`imgui_tables`/`imgui_widgets`）
+加入你的 `Android.mk`，编译通过（先不接后端，只要能编译）。
+
+**参考骨架**：
+
+```makefile
+LOCAL_SRC_FILES += src/ImGui/imgui.cpp
+LOCAL_SRC_FILES += src/ImGui/imgui_draw.cpp
+LOCAL_SRC_FILES += src/ImGui/imgui_tables.cpp
+LOCAL_SRC_FILES += src/ImGui/imgui_widgets.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/ImGui   # ★ 头文件在 include/ImGui，不是 src/ImGui
+LOCAL_CPPFLAGS += -DIMGUI_DISABLE_DEBUG_TOOLS
+```
+
+**验证断言**：`ndk-build` 无 `undefined reference`；`nm app | grep -c ImGui` > 0。
+
+### 习题 42.2 分析"后端职责"（★★★，分析）
+
+**任务要求**：ImGui 核心（`imgui.cpp` 等）与后端（`imgui_impl_vulkan.cpp`）
+**各负责什么**？为什么本项目要 `-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES`？
+
+**参考答案要点**：
+
+| 部分 | 职责 |
+|---|---|
+| 核心 | 布局、控件逻辑、生成**顶点/索引缓冲**（DrawData）|
+| 后端 | 把 DrawData **翻译成 Vulkan 调用**（管线、命令缓冲、上传纹理）|
+
+`NO_PROTOTYPES` 的原因：本项目**动态加载 libvulkan**（第 60 章），
+不链接 Vulkan 的 import 库，所以要禁止 ImGui 后端直接声明/调用 Vulkan 函数原型，
+改为**由我们注入函数指针**。
+
+> [!tip] 评价层要点
+> 这是"**关注点分离**"的经典案例：
+> 核心不关心"用什么渲染 API"，后端不关心"UI 长什么样"。
+> 理解这个分工，才能看懂第 61~62 章的三角形是怎么生成的。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

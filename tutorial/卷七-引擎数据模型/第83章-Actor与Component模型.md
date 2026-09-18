@@ -390,6 +390,57 @@ UE4 实际用的是 TArray（数组）+ 内联存储，
 | 对象数**对不上** | `Count` 字段位置读错 | 用 memview 确认 `Count` 偏移 |
 | 结构体大小**和预期不符** | 对齐填充 | 用 `offsetof` 确认（第 07 章）|
 
+## 课后习题
+
+### 习题 83.1 用 Component 模式重构"大结构体"（★★，应用变式）
+
+**任务要求**：把本章的 `GameObject` 大结构体，重构为"Actor + 组件"模式，
+并写出遍历"所有可渲染对象"的代码。
+
+**参考骨架**：
+
+```cpp
+struct Transform { Vec3 pos; Rotator rot; Vec3 scale; };
+struct MeshComp  { uint64_t meshPtr; bool visible; };
+struct HealthComp{ int hp; int maxHp; };
+struct CompTag   { enum Type { None, Mesh, Health } type; void* ptr; };
+
+struct Actor {
+    Vec3 position;
+    CompTag components[8];      // 组件表（类型 + 指针）
+    int     componentCount;
+};
+
+// 遍历所有 Actor，挑出有 Mesh 组件的
+for (auto& actor : actors) {
+    for (int i = 0; i < actor.componentCount; i++) {
+        if (actor.components[i].type == CompTag::Mesh) {
+            auto* mc = (MeshComp*)actor.components[i].ptr;
+            if (mc->visible) { /* 画它 */ }
+        }
+    }
+}
+```
+
+**验证断言**：没有 Mesh 组件的 Actor 被跳过；重构后**加新类型不改 Actor 定义**。
+
+### 习题 83.2 分析"组合优于继承"（★★★，分析+评价）
+
+**任务要求**：分析：
+
+1. 用继承（`Character : GameObject`、`Weapon : GameObject`）会有什么问题？
+2. 组件模式为什么能避免这些问题？
+3. 组件模式**新增**了什么复杂度？
+
+**参考答案要点**：
+1. 继承会形成**爆炸式类层次**（会飞的武器？会攻击的箱子？），且"多重身份"无法用单继承表达；
+2. 组件按需挂载，**功能组合**而非类型派生；加功能 = 加组件，不改基类；
+3. 新增复杂度：**组件查找/遍历开销**、组件间通信（谁先更新）、内存布局变散（缓存不友好）。
+
+> [!tip] 评价层要点
+> 这是"**正交性**"的胜利：把"是什么"（身份）和"能做什么"（能力）解耦。
+> 代价是"查组件"的间接层——工程上通常可接受（组件数少，或用缓存优化）。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

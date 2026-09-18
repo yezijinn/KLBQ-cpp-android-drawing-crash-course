@@ -398,6 +398,46 @@ include $(BUILD_EXECUTABLE)
 | `LOCAL_SHARED_LIBRARIES` | 链接动态库 |
 | `LOCAL_LDFLAGS` | 链接选项 |
 
+## 参数备忘录：Makefile 自动变量与 ndk-build 变量速查（前期必背）
+
+> [!tip] 为什么单独列一张表
+> 本章的 Makefile 自动变量、ndk-build 的 LOCAL_/APP_ 变量
+> 是第 33、34、43、44 章的基础。集中列出，方便回查。
+
+| 自动变量 | 含义 | 例子 |
+|---|---|---|
+| $@ | 目标名 | 规则 app: main.o 里 $@ = app |
+| $< | 第一个依赖 | %.o: %.c 里 $< = 当前 .c |
+| $^ | 所有依赖（去重） | main.o utils.o |
+| $? | 比目标新的依赖 | 增量编译用 |
+
+| ndk-build 变量 | 作用 | 本项目值（第 34 章） |
+|---|---|---|
+| LOCAL_PATH | 当前 .mk 所在目录 | $(call my-dir) |
+| LOCAL_MODULE | 模块名 | Android_imgui_Vulkan.rc |
+| LOCAL_SRC_FILES | 源文件列表 | src/main.cpp 等 20 个 |
+| LOCAL_C_INCLUDES | 头文件搜索目录 | include/、include/Hack/ ... |
+| LOCAL_CFLAGS/CPPFLAGS | C/C++ 编译选项 | -std=c++20 -fvisibility=hidden |
+| LOCAL_LDLIBS | 系统动态库 | -llog -landroid -lz |
+| LOCAL_STATIC_LIBRARIES | 静态库（顺序重要） | embree/lexers/.../simd |
+| include $(BUILD_EXECUTABLE) | 产物类型=可执行 | 本项目 |
+| include $(BUILD_SHARED_LIBRARY) | 产物类型=.so | — |
+| include $(PREBUILT_STATIC_LIBRARY) | 声明预编译 .a | 6 个 Embree 库 |
+
+| Application.mk 变量 | 作用 | 本项目值 |
+|---|---|---|
+| APP_ABI | 目标架构 | arm64-v8a |
+| APP_PLATFORM | 最低 API | android-25 |
+| APP_STL | C++ 标准库 | c++_static |
+| APP_OPTIM | 优化模式 | release |
+| APP_CPPFLAGS | 全局 C++ 选项 | -std=c++17 -fexceptions ... |
+| APP_LDFLAGS | 全局链接选项 | -flto -Wl,--gc-sections -s |
+
+> [!warning] 三个最易混的点
+> 1. **Makefile 命令前必须 Tab**（用空格报 missing separator）；
+> 2. **LOCAL_STATIC_LIBRARIES 顺序重要**（被依赖的放右，第 28 章）；
+> 3. **LOCAL_LDLIBS 顺序不重要**（系统动态库特殊）。
+
 ## 动手：写一个多目录工程的 Makefile
 
 ```

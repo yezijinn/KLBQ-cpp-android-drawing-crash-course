@@ -331,6 +331,39 @@ int main(void) {
 > [!warning] 只能在原生可执行文件里做
 > App（.so）在 Android 7+ 无法 dlopen libgui（linker namespace 限制），第 32 章讲过。
 
+## 课后习题
+
+### 习题 65.1 用 c++filt 还原符号名（★★，应用变式）
+
+**任务要求**：拿本章的 mangled name，用工具还原成可读签名，并数一数参数个数。
+
+**参考骨架**：
+
+```bash
+echo "_ZN7android21SurfaceComposerClient13createSurfaceERKNS_7String8EjjijPNS_2spINS_7IBinderEEENS_13LayerMetadataE" \
+  | $NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-cxxfilt
+# android::SurfaceComposerClient::createSurface(android::String8 const&, unsigned int, unsigned int, int, unsigned int, android::sp<android::IBinder>*, android::LayerMetadata)
+```
+
+**验证断言**：能数出 7 个参数，并说出 `RK`、`j`、`PNS_` 各代表什么类型。
+
+### 习题 65.2 分析"C++ 符号为什么必须修饰"（★★★，分析）
+
+**任务要求**：分析：
+
+1. C 为什么不需要名字修饰？C++ 为什么需要？
+2. 如果两个重载函数 `f(int)` 和 `f(double)` 不修饰，会怎样？
+3. 这对 `dlsym` 有什么影响？
+
+**参考答案要点**：
+1. C 无重载、无命名空间，函数名唯一；C++ 有重载/命名空间/模板，必须把**参数类型、命名空间**编码进符号名才能区分；
+2. 两个 `f` 会**符号冲突**，链接器无法区分，只能报重复定义；
+3. `dlsym` 必须用**修饰后的完整符号名**（mangled），不能只写 `createSurface`。
+
+> [!tip] 评价层要点
+> 名字修饰不是"乱码"，而是**把类型信息编码进符号**的必然结果。
+> 理解它，才能读懂 `dlsym` 时的那些"长串符号"。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

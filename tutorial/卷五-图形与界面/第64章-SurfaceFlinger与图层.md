@@ -354,6 +354,44 @@ adb shell dumpsys SurfaceFlinger | grep -i 'hwc\|max layers'
 > [!note] 透明来自两处，不是 compositeAlpha
 > 本项目用 OPAQUE/INHERIT，透明靠"图层 RGBA + 每帧清屏 alpha=0"。别以为要设 POST_MULTIPLIED。
 
+## 课后习题
+
+### 习题 64.1 用 dumpsys 数图层（★★，应用变式）
+
+**任务要求**：在设备上执行 `dumpsys SurfaceFlinger`，找出：
+
+1. 当前屏幕上有几个图层？
+2. 哪个图层的 z-order 最高？
+3. 你自己创建的 overlay 图层在列表里的名字是什么？
+
+**参考骨架**：
+
+```bash
+adb shell dumpsys SurfaceFlinger | grep -E "^\+ Layer|z=|name=" | head -40
+# 数 "Layer" 出现次数 = 图层数
+# 找 z 值最大的
+```
+
+**验证断言**：能定位到自己的图层名，并说出它相对其它图层的 z-order 位置。
+
+### 习题 64.2 分析"为什么图层比窗口更底层"（★★★，分析）
+
+**任务要求**：Android 的 App 用"窗口（Window）"，本项目用"图层（Layer）"。
+分析：
+
+1. 窗口和图层是什么关系？
+2. 为什么"绕过窗口直接建图层"能拿到更高权限？
+3. 这样做牺牲了什么？
+
+**参考答案要点**：
+1. 窗口是**框架层抽象**（Java），底层对应一个或多个图层；图层是**合成器的最小单位**；
+2. 窗口要走 `WindowManager`（有权限校验、需要 token），图层直连 SurfaceFlinger（root 下直接调）；
+3. 牺牲了**框架提供的便利**：窗口生命周期管理、输入分发、多窗口适配都得自己做。
+
+> [!tip] 评价层要点
+> 这是"**抽象层级**"的取舍：越底层越自由，但越要自己处理细节。
+> 本项目选底层，是因为它需要的是"能力"而非"便利"。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

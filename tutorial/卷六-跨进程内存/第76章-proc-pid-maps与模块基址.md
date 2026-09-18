@@ -466,6 +466,63 @@ int main(int argc, char** argv) {
 > 缓存看似省事，但**目标进程状态会变**（库加载/卸载、内存映射变化），
 > 用过期 maps 会算错基址。**正确性优先于性能**——几毫秒的读取代价值得。
 
+## 课后习题
+
+### 习题 76.1 解析 maps 找基址（★★，应用变式）
+
+**任务要求**：写一个函数，从 `/proc/pid/maps` 中找到指定模块的**基址**（即该模块**第一个映射段的起始地址**，也就是 ELF 头所在处）。
+
+**参考骨架**：
+
+```cpp
+uint64_t FindModuleBase(int pid, const char* name) {
+    char path[64];
+    snprintf(path, sizeof(path), "/proc/%d/maps", pid);
+    FILE* fp = fopen(path, "r");
+    if (!fp) return 0;
+
+    char line[512];
+    uint64_t base = 0;
+    while (fgets(line, sizeof(line), fp)) {
+        uint64_t start, end;
+        char perms[8], mod[256] = {0};
+        if (sscanf(line, "%lx-%lx %7s %*s %*s %*s %255s",
+                   &start, &end, perms, mod) < 4) continue;
+        if (strstr(mod, name)) {
+            if (base == 0 || start < base) base = start;   // 取最小起点
+        }
+    }
+    fclose(fp);
+    return base;
+}
+```
+
+**验证断言**：对 `libc.so` 调用，返回的地址应落在 `0x7xxxxxxx` 量级（用户态库区）。
+
+> [!note] 为什么取"第一个（最低）映射段起点"，而不是 r-xp 段
+> 模块的**第一个映射段通常是 `r--p`**，文件偏移为 0——**ELF 头就在 `base + 0`**。
+> 第 77 章解析符号时要读 `base + e_phoff`，**必须用这个 r--p 段的起点**。
+> 若误取 `r-xp` 段起点（通常是 `base + 0x1000` 量级），
+> `base + e_phoff` 就会读到错误位置，魔数检查（`\x7fELF`）直接失败。
+> **一句话：基址 = 第一个映射段起点，不是可执行段起点。**
+
+### 习题 76.2 分析"读 maps 为什么这么重要"（★★★，分析+评价）
+
+**任务要求**：本章说"**读哪个地址**"是内存读取的起点问题。分析：
+
+1. 硬编码一个绝对地址会有什么问题？
+2. `maps` 解决了哪一类问题？（结合 ASLR）
+3. 什么情况下 `maps` 也**不够**？
+
+**参考答案要点**：
+1. 每次进程启动地址都不同（ASLR），硬编码必然失效；
+2. maps 给出"**模块基址 + 区间**"，把"绝对地址"变成"基址 + 相对偏移"，抗随机化；
+3. maps 只给到"区间级"信息，**不知道区间里哪个函数在哪**——需要第 77 章的 ELF 符号解析补齐。
+
+> [!tip] 评价层要点
+> 理解两级定位：**maps 定位"模块从哪开始"，ELF 符号定位"模块里某函数在哪"**。
+> 单独用任一级都不够。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

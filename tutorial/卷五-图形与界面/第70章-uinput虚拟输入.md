@@ -327,6 +327,47 @@ adb shell settings put system pointer_location 1
 > [!danger] 需要 root
 > 开 `/dev/uinput` 一般需要 root 权限。本项目把触摸转发做成可选功能（第 70 章）。
 
+## 课后习题
+
+### 习题 70.1 让虚拟设备"点"一个坐标（★★，应用变式）
+
+**任务要求**：基于本章的 `CreateVirtualTouch`，实现 `Tap(x, y)`：在 (x,y) 处模拟一次按下+抬起。
+
+**参考骨架**：
+
+```cpp
+void Tap(int fd, int x, int y) {
+    struct input_event ev{};
+    // 按下
+    ev.type = EV_ABS; ev.code = ABS_X; ev.value = x; write(fd, &ev, sizeof(ev));
+    ev.type = EV_ABS; ev.code = ABS_Y; ev.value = y; write(fd, &ev, sizeof(ev));
+    ev.type = EV_KEY; ev.code = BTN_TOUCH; ev.value = 1; write(fd, &ev, sizeof(ev));
+    ev.type = EV_SYN; ev.code = SYN_REPORT; ev.value = 0; write(fd, &ev, sizeof(ev));
+    // 抬起
+    ev.type = EV_KEY; ev.code = BTN_TOUCH; ev.value = 0; write(fd, &ev, sizeof(ev));
+    ev.type = EV_SYN; ev.code = SYN_REPORT; ev.value = 0; write(fd, &ev, sizeof(ev));
+}
+```
+
+**验证断言**：调用后屏幕上对应位置出现一次"点击"（如点亮某个按钮）。
+
+### 习题 70.2 分析"uinput 的权限与风险"（★★★，分析+评价）
+
+**任务要求**：分析：
+
+1. 为什么 `/dev/uinput` 只有 root 能写？
+2. 一个能写 uinput 的程序，**理论上能做什么**？
+3. 从系统安全角度，这个设计合理吗？
+
+**参考答案要点**：
+1. 因为它能**伪造任意输入**，等于控制整台设备的交互；
+2. 能模拟任意点击/滑动/按键，可操作任何 App；
+3. 合理——**输入伪造是高权限操作**，必须限制在 root。
+
+> [!tip] 评价层要点
+> 理解"**能力越大，权限越严**"的安全设计逻辑。
+> 本项目的 uinput 用法（转发真实触摸）是正当用途，但同一机制可被滥用——所以系统把它锁在 root。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

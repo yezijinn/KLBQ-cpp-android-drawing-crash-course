@@ -409,7 +409,42 @@ addr2line -e crash -f -C 0x140001498
 > 即某处 `base + 0xa0` 里 base 是 0。查结构体定义，0xa0 处是哪个字段，
 > 就能反推是哪一步没判空。这是本项目最常见的崩溃模式（第 30、89 章）。
 
-## 综合实战：写一个"二进制体检"脚本（脱离指导，卷二收尾）
+## 参数备忘录：二进制三件套速查（前期必背）
+
+> [!tip] 为什么单独列一张表
+> 本章介绍的 `nm` / `readelf` / `objdump` / `addr2line` 是**后面全书反复用的工具**
+> （第 41、43、66、77、87 章都会回来查）。把它们的高频选项集中放在这里，方便回查。
+
+| 工具 | 选项 | 作用 | 用在第几章 |
+|---|---|---|---|
+| `nm` | `-C` | 解修饰 C++ 符号（乱码变可读） | 43、65、77 |
+| `nm` | `-D` | 只看动态符号（.so 导出） | 43、77 |
+| `nm` | `-u` | 只看**未定义**符号（缺什么） | 28、43 |
+| `nm` | `-n` | 按地址排序 | 30、87 |
+| `nm` | `--size-sort -S` | 按大小排序（找大函数） | 41 |
+| `readelf` | `-h` | 读 ELF 头（架构、类型） | 30、39 |
+| `readelf` | `-l` | 读程序头（段、加载地址） | 30、76 |
+| `readelf` | `-d` | 读动态段（NEEDED 依赖库） | 40、43 |
+| `readelf` | `-S` | 读节表（.text/.rodata 等） | 41 |
+| `readelf` | `--dyn-syms` | 读动态符号表 | 77 |
+| `objdump` | `-d` | 反汇编 | 30、87 |
+| `objdump` | `--start-address/--stop-address` | 只反汇编指定范围 | 30、87 |
+| `addr2line` | `-e <file> -f -C` | 地址→源码行（带函数名） | 30、33、87 |
+
+> [!note] Android NDK 里的前缀版本
+> 交叉编译工具都带 `aarch64-linux-android-` 前缀：
+> ```bash
+> aarch64-linux-android-nm / -readelf / -objdump / -addr2line
+> ```
+> 路径在 `$NDK/toolchains/llvm/prebuilt/windows-x86_64/bin/`（第 33 章）。
+
+> [!warning] 别混淆：`nm` 的 `-D` vs `readelf` 的 `-d`
+> 大小写含义完全不同！
+> - `nm -D`：**D**ynamic symbols（动态符号表）
+> - `readelf -d`：**d**ynamic section（动态段，看依赖用）
+> **一个查「有哪些符号」，一个查「依赖哪些库」**——本教程两处都常用。
+
+## 综合实战：写一个「二进制体检」脚本（脱离指导，卷二收尾）
 
 > [!important] 独立完成
 > 综合卷二全部工具（nm/objdump/readelf/file/addr2line），写一个分析脚本。

@@ -760,6 +760,60 @@ adb shell ls -ld /data/local/tmp
 - [ ] **dumpsys**：`adb shell dumpsys display | head -20` → 看到显示信息
 - [ ] **体检脚本**：写脚本采集上述信息 → 存成 `device_info.txt`
 
+## 课后习题
+
+### 习题 36.1 写一个"设备体检脚本"（★★，应用变式）
+
+**任务要求**：写 `check_device.sh`，一次性输出设备的关键信息：
+Android 版本、API、ABI、是否 root、SELinux 状态、关键进程是否存在。
+
+**参考骨架**：
+
+```bash
+#!/bin/bash
+echo "== Android 版本 =="
+adb shell getprop ro.build.version.release
+echo "== API 等级 =="
+adb shell getprop ro.build.version.sdk
+echo "== CPU 架构 =="
+adb shell getprop ro.product.cpu.abi
+echo "== 是否 root =="
+adb shell "su -c 'echo root OK'" 2>/dev/null || echo "无 root"
+echo "== SELinux =="
+adb shell getenforce
+echo "== 关键进程 =="
+adb shell ps -A | grep -E 'surfaceflinger|zygote|system_server'
+```
+
+**验证断言**：无 root 设备时脚本**不报错中断**（用 `|| echo` 兜底），且五项都打印。
+
+### 习题 36.2 分析 adb 的"边界"（★★★，分析）
+
+**任务要求**：本章强调"**adb 在电脑敲，`adb shell` 后面的部分在手机上跑**"。
+请分析下面三行命令，指出**各自在哪台机器执行**、**引号会被谁解释**：
+
+```bash
+adb shell ls -l /data/local/tmp
+adb shell "cd /data/local/tmp && ./app"
+adb shell 'echo $HOME'
+```
+
+| 命令 | 在哪执行 | 引号/变量谁解释 | 结果 |
+|---|---|---|---|
+| 1 | ？ | ？ | ？ |
+| 2 | ？ | ？ | ？ |
+| 3 | ？ | ？ | ？ |
+
+**参考答案要点**：
+1. `ls` 在手机跑；`/data/local/tmp` 是手机路径；
+2. 整串在手机跑；`&&` 必须加引号，否则被**本地 shell** 先解释（会出错）；
+3. `$HOME` 用**单引号**→ 本地不展开，到手机上由手机 shell 展开。
+
+> [!tip] 评价层要点
+> 引号之争的本质：**"哪一侧的 shell 先看到这个字符"**。
+> 双引号/不加引号 → 本地先解释；单引号 → 原样传给手机。
+> 这是 adb 使用中最高频的"玄学错误"来源。
+
 ## 本章小结
 
 > [!abstract] 一句话回顾

@@ -222,6 +222,55 @@ aarch64-linux-android-readelf -d app_shared | grep NEEDED
 - [ ] **对比大小**：`c++_static` 单文件更大，`c++_shared` 需额外带 `libc++_shared.so`
 - [ ] **验证依赖**：`readelf -d app | grep NEEDED` → shared 版会列出 `libc++_shared.so`
 
+## 课后习题
+
+### 习题 40.1 两种 STL 对比实验（★★，应用变式）
+
+**任务要求**：对同一个程序分别用 `c++_static` 和 `c++_shared` 编译，填表：
+
+| 项 | c++_static | c++_shared |
+|---|---|---|
+| 产物大小 | ？ | ？ |
+| `readelf -d \| grep NEEDED` | ？ | ？ |
+| 部署文件数 | ？ | ？ |
+
+**参考骨架**：
+
+```bash
+ndk-build clean && ndk-build APP_STL=c++_static
+ls -l libs/arm64-v8a/app
+readelf -d libs/arm64-v8a/app | grep NEEDED
+
+ndk-build clean && ndk-build APP_STL=c++_shared
+ls -l libs/arm64-v8a/app
+readelf -d libs/arm64-v8a/app | grep NEEDED
+```
+
+**验证断言**：shared 版 `NEEDED` 里多出 `libc++_shared.so`；static 版产物明显更大。
+
+### 习题 40.2 分析"异常跨库边界"（★★★，分析）
+
+**任务要求**：分析下面这个失败场景的成因和规避：
+
+```
+主程序(STL副本A)  ──call──▶  mylib.so(STL副本B)  ──throw MyError──▶  A 不认识
+结果：std::terminate
+```
+
+要求：
+1. 解释为什么"两份 STL 各有自己的异常状态"；
+2. 本项目为什么**没有**这个问题；
+3. 什么情况下**必须**改用 `c++_shared`。
+
+**参考答案要点**：
+1. `c++_static` 把 STL 代码**各编一份**进每个产物；异常的类型信息（RTTI）和运行时状态**各有一份**，跨边界时类型不匹配；
+2. 本项目只有**一个可执行文件，没有自己的 .so**，不存在跨边界；
+3. 当产物含**多个 .so** 且它们之间要传 C++ 对象/异常时，必须 `c++_shared`（共享一份 STL）。
+
+> [!tip] 评价层要点
+> 选型的关键不是"哪个小"，而是"**产物结构是单文件还是多 .so**"。
+> 单文件 → static 最优；多 .so 传对象 → 被迫 shared。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

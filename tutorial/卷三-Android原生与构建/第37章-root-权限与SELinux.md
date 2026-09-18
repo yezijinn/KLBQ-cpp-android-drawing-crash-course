@@ -288,6 +288,44 @@ adb shell su -c dmesg | grep avc | tail -3
 > 有些定制 ROM 出厂就是 `Permissive`。不记录就 `setenforce 1` 会**意外打开** SELinux。
 > 不确定就 `adb reboot`——`setenforce` 不写盘，重启即回默认。
 
+## 课后习题
+
+### 习题 37.1 诊断"三种拒绝"（★★，应用变式）
+
+**任务要求**：本章列了 DAC、SELinux、capability 三层关卡。
+给定三个报错，判断**被哪一层拒绝**，并给出验证命令。
+
+| 报错 | 哪一层拒绝 | 验证命令 | 解法方向 |
+|---|---|---|---|
+| `Permission denied`（文件模式 644） | ？ | `ls -l` | ？ |
+| `avc: denied { read } for ...` | ？ | `dmesg \| grep avc` | ？ |
+| 读 `/proc/pid/mem` 报 `Operation not permitted` | ？ | `getenforce` + `id` | ？ |
+
+**参考答案要点**：
+1. **DAC**（Linux 文件权限）→ `chmod` 或 `chown` 修复；
+2. **SELinux** → `getenforce` 确认 enforcing，需策略或临时 `setenforce 0`；
+3. **capability/SELinux** → root 未必够，需要 `CAP_SYS_PTRACE` 或 SELinux 放行。
+
+### 习题 37.2 分析 DAC 与 SELinux 的区别（★★★，分析+评价）
+
+**任务要求**：写一段 120~200 字，回答：
+"**为什么'有 root 权限'不等于'什么都能干'？**"
+
+要求：
+1. 区分 **DAC**（自主访问控制，传统 Unix 权限）和 **SELinux**（强制访问控制）；
+2. 举例说明**root 也会被 SELinux 拦**的场景；
+3. 说出本项目应对这两层的**思路**（结合"本项目为什么能跑"）。
+
+**参考骨架**：
+- DAC：以"用户/组/other"判断，root（uid=0）默认绕过；
+- SELinux：以"**进程域 → 资源类型**"判断，**root 进程也在某个域里**，域不允许就拒绝；
+- 场景：root 进程处于 `su` 域，读某文件类型被 `avc: denied`；
+- 本项目：以独立可执行文件在 `su`/root 域运行，避免 App 沙箱域。
+
+> [!tip] 评价层要求
+> 点出关键：**DAC 看"你是谁"，SELinux 看"你在哪个域"**。
+> 这是理解 Android 权限体系的分水岭。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

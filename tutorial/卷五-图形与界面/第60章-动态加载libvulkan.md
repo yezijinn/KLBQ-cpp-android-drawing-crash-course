@@ -358,6 +358,56 @@ int main(void) {
 | 程序启动就崩 | 直接链接了 `-lvulkan` 但设备没有 | 改用 dlopen（本章核心）|
 | 函数指针调用崩溃 | 没检查 NULL 就调用 | 调用前判 `if (vkCreateInstance)` |
 
+## 课后习题
+
+### 习题 60.1 实现 mini wrapper 的降级（★★，应用变式）
+
+**任务要求**：基于本章的 `mini_vulkan.cpp`，增加"缺核心函数时明确报错"的逻辑，
+并写一个 mock 测试：模拟 `dlopen` 失败时程序**仍能正常退出**。
+
+**参考骨架**：
+
+```cpp
+bool MiniVulkanInit() {
+    g_handle = dlopen("libvulkan.so", RTLD_NOW);
+    if (!g_handle) {
+        printf("[降级] 无 Vulkan: %s\n", dlerror());
+        return false;                 // ★ 不崩，返回 false
+    }
+    LOAD(CreateInstance);
+    LOAD(EnumeratePhysicalDevices);
+    if (!pfnCreateInstance || !pfnEnumeratePhysicalDevices) {
+        printf("[降级] 缺核心函数\n");
+        return false;
+    }
+    return true;
+}
+
+int main() {
+    if (!MiniVulkanInit()) { printf("走软件降级路径\n"); return 0; }
+    // ...
+}
+```
+
+**验证断言**：在无 Vulkan 设备上运行 → 打印"降级"，退出码 0（而非崩溃）。
+
+### 习题 60.2 分析"dlopen vs 直接链接"的取舍（★★★，分析+评价）
+
+**任务要求**：本章列了三种链接方式。分析：
+
+1. 为什么本项目**必须**用 dlopen？
+2. dlopen 的**代价**是什么？
+3. 什么情况下"直接链接"反而是更好的选择？
+
+**参考答案要点**：
+1. 不是所有 Android 设备都有 Vulkan，直接链接会让程序**根本起不来**；
+2. 代价：每个函数要手动 `dlsym`（代码多）、运行前必须判空、性能略低（一次间接调用）；
+3. 当**目标平台保证有该库**（如只发布到支持 Vulkan 的设备）、或追求极简代码时，直接链接更好。
+
+> [!tip] 评价层要点
+> 关键判断：**"缺失时能否接受启动失败"**。
+> 能接受 → 直接链接更简单；不能接受 → dlopen 换降级能力。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

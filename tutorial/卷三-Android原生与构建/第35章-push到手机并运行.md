@@ -393,6 +393,78 @@ set -e   # 任一步失败即退出
 
 **验收**：`./deploy.sh` 一条命令跑通全流程；`./deploy.sh --no-build` 跳过编译；设备没连时报错清晰。
 
+## 课后习题
+
+### 习题 35.1 写一个带参数的一键部署脚本（★★，应用变式）
+
+**任务要求**：写 `deploy.sh`，支持三种调用：
+
+```bash
+./deploy.sh              # 编译 + 推送 + 运行 + 抓日志
+./deploy.sh --no-build   # 跳过编译，直接推送现有产物
+./deploy.sh --log 3      # 运行后抓 3 秒日志再退出
+```
+
+**参考骨架**：
+
+```bash
+#!/bin/bash
+set -e
+TARGET=hello_arm64
+REMOTE=/data/local/tmp/$TARGET
+BUILD=1
+LOG_SEC=0
+
+# ★ 注意：set -e 下不要写 `[ cond ] && cmd`——cond 为假时整行返回非 0，脚本会直接退出。
+#   用 if 代替（这也是本章正文警告的 set -e 陷阱之一）。
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --no-build) BUILD=0 ;;
+        --log)      LOG_SEC="$2"; shift ;;
+        *) echo "未知参数: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+if [ "$BUILD" = 1 ]; then
+    ndk-build -j8
+fi
+adb devices | grep -q "device$" || { echo "设备未连接"; exit 1; }
+adb push libs/arm64-v8a/$TARGET $REMOTE
+adb shell chmod 755 $REMOTE
+if [ "$LOG_SEC" -gt 0 ]; then
+    adb logcat -c
+    adb shell "nohup $REMOTE >/dev/null 2>&1 &"
+    sleep "$LOG_SEC"
+    adb logcat -d -s HelloNDK | tail -20
+else
+    adb shell $REMOTE
+fi
+```
+
+**验证断言**：`--no-build` 时不调用 `ndk-build`；`--log 3` 时脚本 3 秒后退出。
+
+### 习题 35.2 分析"程序闪退无输出"的排查链（★★★，分析）
+
+**场景**：`adb shell /data/local/tmp/app` 敲下去，终端**没有任何输出**，直接回到提示符。
+
+**任务要求**：按"从外到内"的顺序列出**至少 4 步排查**，每步给出**具体命令**和**可能的结论**。
+
+**参考骨架**：
+
+| 步 | 命令 | 若…则说明 |
+|---|---|---|
+| 1 | `adb shell ls -l /data/local/tmp/app` | 文件不在 → push 没成功 |
+| 2 | `adb shell /data/local/tmp/app; echo "exit=$?"` | exit 非 0 → 程序异常退出 |
+| 3 | `adb logcat -d \| grep -E 'SIGSEGV\|SIGABRT\|Fatal'` | 有 Fatal signal → 段错误，看 tombstone |
+| 4 | `adb shell readelf -d /data/local/tmp/app \| grep NEEDED` | 缺动态库 → "No such file" 其实是库缺失 |
+| 5 | `adb shell ls -lt /data/tombstones/ \| head` | 有 tombstone → 抓完整调用栈 |
+
+> [!tip] 这道题练什么
+> "无输出"最迷惑人——它可能是**任何一层**失败。
+> 关键是养成"逐层证伪"的习惯：先确认文件在不在，再看进程有没有起来，再看有没有崩溃。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束

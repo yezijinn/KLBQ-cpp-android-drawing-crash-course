@@ -355,6 +355,47 @@ ndk-build                    # 生产版（默认）
 >
 > 三者配合：环境变量选档 → ifeq 设编译选项 → 宏控制代码分支。
 
+## 课后习题
+
+### 习题 34.1 给示例工程加源文件与 include（★★，应用变式）
+
+**任务要求**：基于第 33 章的 `hello_ndk/` 工程，完成：
+
+1. 新建 `jni/src/math_util.c` 和 `jni/include/math_util.h`，实现 `int add(int,int)`；
+2. 修改 `Android.mk`：加 `LOCAL_C_INCLUDES` 和 `LOCAL_SRC_FILES`；
+3. `hello.c` 里 `#include "math_util.h"` 并调用它；
+4. `ndk-build` 编译通过，push 运行看到正确结果。
+
+**参考骨架**：
+
+```makefile
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_SRC_FILES  := src/hello.c
+LOCAL_SRC_FILES  += src/math_util.c
+```
+
+**验证断言**：`ndk-build V=1` 时能看到 `math_util.c` 被编译，且 include 路径含 `jni/include`。
+
+### 习题 34.2 分析"三种 undefined reference"（★★★，分析）
+
+**任务要求**：`undefined reference` 是最常见的链接错误。本章和前面章节其实讲了**三种不同成因**，
+请分别给出：**症状 → 成因 → 解法**。
+
+| 成因 | 症状示例 | 根因 | 解法 |
+|---|---|---|---|
+| ① 源文件漏列 | ？ | `LOCAL_SRC_FILES` 没写该 .c | ？ |
+| ② 库没链 | ？ | `LOCAL_STATIC_LIBRARIES` 缺库 | ？ |
+| ③ 库顺序错 | ？ | 被依赖的库放左边 | ？ |
+
+**参考骨架**（提示）：
+- ① 报 `undefined reference to 'add'` → 因为 `math_util.c` 没进 `LOCAL_SRC_FILES`；
+- ② 报 `undefined reference to 'rtcNewDevice'` → 因为没加 `embree_prebuilt`；
+- ③ 报 `undefined reference to 'TaskScheduler::...'` → 因为 `task_prebuilt` 排在 `embree_prebuilt` 左边（第 28 章：被依赖的放右边）。
+
+> [!tip] 评价层要求
+> 判断哪种成因**最难排查**：③（顺序错）。
+> 因为代码和库都在，只是"排队站错了"——报错信息不指向顺序，只能靠第 28 章的规则推理。
+
 ## 本章小结
 
 > [!abstract] 本章要点已收束
