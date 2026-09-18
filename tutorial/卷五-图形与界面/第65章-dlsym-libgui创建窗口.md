@@ -95,6 +95,34 @@ _ZN7android21SurfaceComposerClient13createSurfaceE...
 
 ## 实际工作流程
 
+> [!tip] 先看时序，再看代码
+> 用 `dlsym` 调私有 C++ 符号创建图层的**完整调用链**（本项目 `ANativeWindowCreator` 走的就是这条）：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as NativeWindowCreator::Init/Create
+    participant Lib as libgui.so (私有库)
+    participant SCC as SurfaceComposerClient
+    participant SC as SurfaceControl
+    participant SF as SurfaceFlinger
+
+    App->>Lib: dlopen(libgui.so, RTLD_NOW)
+    Lib-->>App: 句柄 handle
+    App->>Lib: dlsym(handle, 构造函数 mangled 名)
+    Lib-->>App: SurfaceComposerClient 构造函数指针
+    App->>Lib: dlsym(handle, createSurface mangled 名)
+    Lib-->>App: createSurface 函数指针
+    App->>SCC: 调用构造函数(this 作第一参数)
+    App->>SCC: pfCreateSurface(client, name, w, h, format, flags, ...)
+    SCC->>SF: 内部 Binder 事务(createSurface)
+    SF-->>SCC: 返回 SurfaceControl 句柄
+    SCC-->>App: sp SurfaceControl
+    App->>SC: pfnSC_getSurface(sc)
+    SC-->>App: ANativeWindow 可绘制表面
+    Note over App,SF: 之后用 Transaction 设置层级/位置/显示，再交给 Vulkan 绘制
+```
+
 ```
 1. dlopen("libgui.so")                      打开库
 2. dlsym(句柄, "mangled_name")              取函数地址

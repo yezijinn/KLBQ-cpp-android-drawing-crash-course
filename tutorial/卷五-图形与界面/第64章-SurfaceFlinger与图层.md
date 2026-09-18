@@ -49,6 +49,27 @@ SurfaceFlinger 负责把它们合成，输出到屏幕。
 
 ## SurfaceFlinger 是什么
 
+> [!tip] 先看图，再看文字
+> SurfaceFlinger 是**所有可见内容的汇聚点**——各 App/系统组件都不直接通信，
+> 而是把各自的图形缓冲交给它，由它统一合成：
+
+```mermaid
+flowchart TD
+    App[App 窗口图层] -->|queueBuffer| BQ1[BufferQueue]
+    SysUI[SystemUI 状态栏/导航栏] -->|queueBuffer| BQ2[BufferQueue]
+    Overlay[KLBQ 覆盖层 SurfaceControl] -->|queueBuffer| BQ3[BufferQueue]
+    Wallpaper[壁纸图层] -->|queueBuffer| BQ4[BufferQueue]
+    BQ1 --> SF[SurfaceFlinger 合成器进程]
+    BQ2 --> SF
+    BQ3 --> SF
+    BQ4 --> SF
+    SF -->|按 z-order 排序| Decide{合成方式}
+    Decide -->|图层数不超上限| HWC[硬件合成器 HWC]
+    Decide -->|超出上限| GPU[GPU 合成]
+    HWC --> Panel[显示面板]
+    GPU --> Panel
+```
+
 一个**系统服务进程**（不是库）：
 
 ```bash
@@ -121,6 +142,18 @@ vkCreateAndroidSurfaceKHR(instance, &info, nullptr, &surface);
 **两种方式对应同一个 BufferQueue。**
 
 ## 关键 C++ 类（libgui.so）
+
+> [!tip] 图层创建的调用链
+> 从客户端到屏幕，涉及 4 个 libgui 类。**关系图**如下（第 65 章用 `dlsym` 调这些符号）：
+
+```mermaid
+flowchart TD
+    C[SurfaceComposerClient<br/>与 SurfaceFlinger 通信的客户端] -->|"createSurface(name,w,h,format,flags,parent,metadata)"| SC[SurfaceControl<br/>图层句柄]
+    SC -->|"getSurface()"| S[Surface<br/>可绘制表面 继承 ANativeWindow]
+    T[Transaction<br/>批量原子修改] -->|"setLayer/setPosition/setSize/show"| SC
+    T -->|"apply()"| SF[SurfaceFlinger 更新图层属性]
+    S -->|"交给 Vulkan/ImGui"| Draw[绘制内容]
+```
 
 Android 的原生图形层是 C++（不是 NDK 公开 API）：
 

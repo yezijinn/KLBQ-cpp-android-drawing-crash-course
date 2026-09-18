@@ -52,6 +52,31 @@ if (!lib) {
 
 ## dlopen 四件套
 
+> [!tip] 先看时序，再看代码
+> `dlopen` 的四个步骤 + 缺失时的**优雅降级**，是本项目「没有 Vulkan 也能启动」的关键：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as 程序启动
+    participant DL as dlopen/dlsym
+    participant VK as libvulkan.so
+    participant FB as 降级路径
+
+    App->>DL: dlopen(libvulkan.so, RTLD_NOW)
+    alt 库存在
+        VK-->>DL: 返回句柄 handle
+        DL-->>App: handle 非空
+        App->>DL: dlsym(handle, vkCreateInstance)
+        DL-->>App: 函数指针 pfn
+        App->>App: 强转为 PFN_vkCreateInstance 并调用
+    else 库缺失
+        DL-->>App: 返回 NULL + dlerror()
+        App->>FB: 打印降级提示 程序仍能启动
+    end
+    Note over App,VK: 程序退出时 dlclose(handle)
+```
+
 ```cpp
 #include <dlfcn.h>
 

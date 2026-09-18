@@ -64,6 +64,22 @@ if (玩家相机 != 0) {
 
 ## 获取 CameraManager 的链
 
+> [!tip] 指针链一张图
+> 从全局 `UWorld` 一路解引用到 `CameraCache`，本项目读取相机数据走的就是这条链（每级都是 `dr->Read<uint64_t>` 加一个偏移）：
+
+```mermaid
+flowchart TD
+    UW["UWorld"] -->|"+0x188"| GI["GameInstance"]
+    GI -->|"+0x38"| LPArr["LocalPlayers 数组"]
+    LPArr -->|"+0x00"| LP["LocalPlayer"]
+    LP -->|"+0x30"| PC["PlayerController"]
+    PC -->|"+0x3A8"| CM["PlayerCameraManager"]
+    CM -->|"+0x2300"| CC["CameraCache: Location + Rotation + FOV"]
+    PC -.->|"+0x378"| CR["ControlRotation 玩家输入朝向"]
+    CR -.->|"意图"| Self["自瞄写这里"]
+    CC -.->|"结果"| Self2["读用这里"]
+```
+
 ```
 UWorld
   ↓ +0x188

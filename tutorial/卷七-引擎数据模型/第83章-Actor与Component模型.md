@@ -54,7 +54,47 @@ struct GameObject {
 
 ## Component 模式：组合优于继承
 
-把功能拆成独立的"组件"，对象按需挂载：
+> [!tip] 先看图，再看代码
+> 下面这张类图是本项目读取引擎数据时的**对象组织模型**——
+> `Actor` 是容器，能力通过挂载的 `Component` 组合出来（UE4 的 Actor/Component、Unity 的 GameObject/Component 同源）：
+
+```mermaid
+classDiagram
+    class Actor {
+        +Vec3 position
+        +CompTag[] components
+        +int componentCount
+    }
+    class CompTag {
+        <<type>>
+        +Type type
+        +void* ptr
+    }
+    class TransformComponent {
+        +Vec3 pos
+        +Rotator rot
+        +Vec3 scale
+    }
+    class MeshComponent {
+        +uint64_t meshPtr
+        +bool visible
+    }
+    class CharacterComponent {
+        +int hp
+        +int maxHp
+    }
+    class WeaponComponent {
+        +int ammo
+        +float damage
+    }
+    Actor *-- CompTag : 持有(类型+指针)
+    CompTag ..> TransformComponent : type=Transform
+    CompTag ..> MeshComponent : type=Mesh
+    CompTag ..> CharacterComponent : type=Character
+    CompTag ..> WeaponComponent : type=Weapon
+```
+
+把功能拆成独立的「组件」，对象按需挂载：
 
 ```
 Actor（容器，只有基础信息）

@@ -110,6 +110,29 @@ bool ReadMemoryFull(pid_t pid, void *remoteAddr, void *localBuf, size_t size) {
 
 ## 一次读多块
 
+> [!tip] 先看时序，再看代码
+> `process_vm_readv` 相对 ptrace 的最大优势：**一次系统调用搬完多块分散数据**。
+> 下图是「一次读 3 块」的调用链（对应本项目读一个 Actor 的十几个字段，第 81 章展开）：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 调用方(SysHal::read / process_v)
+    participant K as Linux 内核
+    participant T as 目标进程地址空间
+
+    U->>U: 构造 local[3] / remote[3] 两组 iovec
+    U->>K: syscall(270, pid, local, 3, remote, 3, 0)
+    K->>K: 校验权限(PTRACE_MODE_ATTACH_REALCREDS)
+    K->>T: 按 remote[0] 读 100 字节
+    K->>T: 按 remote[1] 读 200 字节
+    K->>T: 按 remote[2] 读 50 字节
+    T-->>K: 数据
+    K-->>U: 返回 350 实际传输字节数
+    Note over U,K: 返回值可能小于请求(部分成功)，严格实现需循环补齐
+    U->>U: 检查 n 是否等于 size
+```
+
 这是 `process_vm_readv` 相对 ptrace 最大的优势：
 
 ```c

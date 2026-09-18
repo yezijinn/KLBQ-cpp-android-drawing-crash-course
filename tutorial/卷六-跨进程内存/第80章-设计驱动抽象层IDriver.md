@@ -48,6 +48,54 @@ else           Uworld = syscall_read<uint64_t>(...);
 
 ## 本项目的接口定义
 
+> [!tip] 先看图，再看代码
+> 本项目「两个后端二选一」的类结构。**业务代码只依赖 `IDriver` 接口**，
+> 运行时由 `MemDriver` 转发到 `Driver`（内核）或 `SysHal`（系统调用）：
+
+```mermaid
+classDiagram
+    class IDriver {
+        <<interface>>
+        +Read(address, buffer, size) int
+        +Write(address, buffer, size) int
+        +GetPid(packageName) int
+        +GetGlobalPid() int
+        +SetGlobalPid(pid) void
+        +GetModuleAddress(moduleName, segmentIndex, outAddress, isStart) bool
+        +DumpMemory(target, dumpPath) bool
+        +GetScanRegions() vector
+        +ReadString(address, max_length) string
+    }
+    class Driver {
+        +Read(address, buffer, size) int
+        +Write(address, buffer, size) int
+        +TouchDown(slot, x, y, w, h) void
+        +GyroReport(x, y, z) void
+        +SetProcessHwbpRef(points) int
+        +StartSyscallMonitor(pid) int
+    }
+    class MemDriver {
+        -Driver kernel_
+        -SysHal syscall_
+        -int mode_
+        +Open(mode) bool
+        +CanSwitch() bool
+        +kernel() Driver
+        +syscall() SysHal
+    }
+    class SysHal {
+        -pid_t pid
+        +read(addr, buffer, size) bool
+        +write(addr, buffer, size) bool
+        +getPID(packageName) int
+        +get_module_base(pid, module_name) uintptr_t
+    }
+    IDriver <|-- Driver : 实现(内核后端)
+    IDriver <|-- MemDriver : 实现(兼容层)
+    MemDriver --> Driver : 持有内核后端
+    MemDriver --> SysHal : 持有系统调用后端
+```
+
 ```cpp
 class IDriver {
 public:

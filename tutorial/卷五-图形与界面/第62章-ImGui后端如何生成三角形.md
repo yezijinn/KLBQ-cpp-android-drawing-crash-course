@@ -20,6 +20,38 @@ aliases: [ch62]
 
 ## 先看后端要做的六件事
 
+> [!tip] 先看时序，再看分解
+> `ImGui_ImplVulkan_RenderDrawData` 内部按顺序做六件事，
+> 下图是它和 Vulkan API 的交互时序：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant IG as ImGui 核心
+    participant BK as ImGui Vulkan 后端
+    participant VK as Vulkan API
+    participant GPU as GPU
+
+    IG->>BK: RenderDrawData(draw_data, cmd_buffer)
+    BK->>BK: 检查 TotalVtxCount 是否超缓冲
+    alt 缓冲不够
+        BK->>VK: vkDestroyBuffer / vkFreeMemory 旧缓冲
+        BK->>VK: CreateBuffer 按 1.5 倍扩容
+    end
+    BK->>VK: vkMapMemory
+    BK->>BK: memcpy 顶点/索引数据
+    BK->>VK: vkUnmapMemory
+    BK->>VK: vkCmdBeginRenderPass
+    BK->>VK: vkCmdPushConstants 传 scale/translate
+    loop 每个 CmdList 的每个 Cmd
+        BK->>VK: vkCmdSetScissor 设置裁剪矩形
+        BK->>VK: vkCmdBindDescriptorSets 绑定纹理
+        BK->>VK: vkCmdDrawIndexed 发起绘制
+    end
+    BK->>VK: vkCmdEndRenderPass
+    VK->>GPU: 提交命令
+```
+
 `ImGui_ImplVulkan_RenderDrawData(draw_data, cmd_buffer)` 内部：
 
 ```
