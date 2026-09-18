@@ -493,6 +493,64 @@ int main() {
 
 **验证断言**：`'A'`→1 字节；`'中'`→3 字节 `E4 B8 AD`；`'é'`→2 字节 `C3 A9`；emoji→4 字节。
 
+> [!tip] 可直接编译的完整版（补齐头文件 + 合并定义与 main）
+> 上面的「核心骨架」与「验证断言」分开写，**复制去编译会缺头文件**。下面是自包含完整版：
+
+```cpp
+// ch85_solution.cpp —— 完整可运行版
+#include <string>
+#include <cstdint>
+#include <cstdio>
+#include <cassert>
+
+static void AppendUtf8(std::string& out, char32_t c) {
+    if (c < 0x80) {
+        out += (char)c;
+    } else if (c < 0x800) {
+        out += (char)(0xC0 | (c >> 6));
+        out += (char)(0x80 | (c & 0x3F));
+    } else if (c < 0x10000) {
+        out += (char)(0xE0 | (c >> 12));
+        out += (char)(0x80 | ((c >> 6) & 0x3F));
+        out += (char)(0x80 | (c & 0x3F));
+    } else {
+        out += (char)(0xF0 | (c >> 18));
+        out += (char)(0x80 | ((c >> 12) & 0x3F));
+        out += (char)(0x80 | ((c >> 6) & 0x3F));
+        out += (char)(0x80 | (c & 0x3F));
+    }
+}
+
+int main() {
+    std::string s;
+    AppendUtf8(s, U'A');        // ASCII：1 字节
+    assert(s.size() == 1 && s[0] == 'A');
+
+    s.clear();
+    AppendUtf8(s, U'\u4E2D');    // '中' = U+4E2D：3 字节 E4 B8 AD
+    assert(s.size() == 3);
+    assert((unsigned char)s[0] == 0xE4);
+    assert((unsigned char)s[1] == 0xB8);
+    assert((unsigned char)s[2] == 0xAD);
+
+    s.clear();
+    AppendUtf8(s, U'\u00E9');    // 'é' = U+00E9：2 字节 C3 A9
+    assert(s.size() == 2);
+
+    s.clear();
+    AppendUtf8(s, U'\U0001F600'); // emoji：4 字节
+    assert(s.size() == 4);
+
+    printf("习题 85.1 全部通过\n");
+    return 0;
+}
+```
+
+> 编译运行：
+> ```bash
+> g++ -std=c++17 -Wall ch85_solution.cpp -o ch85 && ./ch85
+> ```
+
 > [!tip] 这道题练什么
 > ① **位运算拼 UTF-8 字节**（`0xC0|...`、`0xE0|...` 是 UTF-8 的编码规则）；
 > ② 这正是本项目把游戏里的宽字符名字（UTF-16/32）转成可显示 UTF-8 的核心步骤；
