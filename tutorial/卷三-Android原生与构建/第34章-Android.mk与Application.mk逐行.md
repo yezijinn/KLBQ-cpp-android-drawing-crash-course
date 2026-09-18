@@ -14,6 +14,14 @@ aliases: [ch34]
 > 上一章用 `ndk-build` 编出了第一个程序。
 > 本章把背后的两个构建脚本——**`Android.mk` 和 `Application.mk`**——逐行讲透。
 
+## 先看一个真实场景：改一行源码，编译失败
+
+> [!question] 你遇到过这个吗？
+> 加了个新 `.cpp`，`ndk-build` 报 `undefined reference`；
+> 或者引入第三方库，链接顺序一错就满屏报错。
+> **根因**：`Android.mk` 里的 `LOCAL_SRC_FILES`/`LOCAL_STATIC_LIBRARIES` 没配对。
+> 本章逐行讲透这两个文件——读懂它，你就能自己修构建问题。
+
 ## 完整的 Android.mk
 
 ```makefile
