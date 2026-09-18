@@ -16,6 +16,20 @@ aliases: [ch43]
 
 ## 先看 Embree 是什么
 
+> [!tip] 选型权衡：为什么用 Intel Embree？（供应链卡片）
+> **本项目锁定版本**：**Embree 4.4.0**（`RTC_VERSION_STRING "4.4.0"` / `RTC_VERSION 40400`，见 `rtcore_config.h`）。
+>
+> | 维度 | 说明 |
+> |---|---|
+> | **为何选它** | 高性能光线追踪内核，自带 BVH 构建 + SIMD 优化，比手写快 2~5 倍（第 97 章实测） |
+> | **核心优势** | 工业级光线求交、多线程并行、C API 稳定 |
+> | **在项目中的角色** | 遮挡判定（从相机向目标发射线，判断是否被墙挡住，卷八） |
+> | **供应链风险** | **预编译 `.a` 仅 arm64**，无法在 x86 上直接跑；**API 在 3→4 有大改**（`RTCIntersectContext`→`RTCIntersectArguments`）|
+>
+> **版本兼容提示（重要）**：本项目用 **Embree 4** 的 `rtcIntersect1(scene, &rayhit, &args)` 签名。
+> **Embree 3** 的签名是 `rtcIntersect1(scene, &ctx, &rayhit)`——**顺序不同，别照抄旧教程**（本章下文有对比）。
+> 6 个 `.a` 必须**同为 4.4.0、同为 arm64**，混用会报 `undefined reference` 或格式错误。
+
 **Intel Embree**：高性能光线追踪内核库。
 给它一堆三角形，它构建 BVH 加速结构，然后你可以问：
 "从 A 点射向 B 点，撞到什么了吗？"

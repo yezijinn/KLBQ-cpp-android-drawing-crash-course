@@ -16,6 +16,19 @@ aliases: [ch60]
 
 ## 先看问题
 
+> [!tip] 选型权衡：为什么用 dlopen 加载 Vulkan？（供应链卡片）
+> **本项目依赖**：**libvulkan.so**（Android 系统库，**非**自带；用 `vulkan_wrapper.h` 声明 `VK_NO_PROTOTYPES`）。
+>
+> | 维度 | 说明 |
+> |---|---|
+> | **为何选它** | Vulkan 是覆盖层绘制用的图形 API（比 OpenGL ES 更可控） |
+> | **核心优势** | 动态加载 → 缺库时**优雅降级**，程序仍能启动 |
+> | **在项目中的角色** | 卷五的图形渲染后端（`VulkanGraphics` / `imgui_impl_vulkan`） |
+> | **供应链风险** | Vulkan 版本碎片化（1.0/1.1/1.2）；设备可能无 Vulkan；扩展函数非核心 |
+>
+> **版本兼容提示**：本项目用 `VK_API_VERSION_1_0`（核心函数），扩展函数按需 `vkGetInstanceProcAddr` 探测。
+> `vulkan_wrapper.h` 声明了所有用到的函数指针，**版本由运行时设备决定**，非编译期锁定。
+
 如果直接在 `Android.mk` 里写：
 
 ```makefile
