@@ -72,6 +72,11 @@ struct iovec {
 #include <string.h>
 
 bool ReadMemory(pid_t pid, void *remoteAddr, void *localBuf, size_t size) {
+    // ★ 防御 1：前置校验——空指针 / 零长度直接拒绝
+    if (localBuf == nullptr || remoteAddr == nullptr || size == 0) return false;
+    // ★ 防御 2：pid 合法性（<=0 一定是错的）
+    if (pid <= 0) return false;
+
     struct iovec local[1];
     local[0].iov_base = localBuf;
     local[0].iov_len  = size;
@@ -84,6 +89,11 @@ bool ReadMemory(pid_t pid, void *remoteAddr, void *localBuf, size_t size) {
     return n == (ssize_t)size;
 }
 ```
+
+> [!warning] 为什么先判空再调用
+> `process_vm_readv` 对 `local_iov=NULL` 或 `size=0` 会返回 `EINVAL`，
+> 但**在到达内核之前**你就能拦住——前置校验比事后处理 errno 更省。
+> 本项目 `MemDriver::Read` 的第一行就是 `if (buffer == nullptr || size == 0) return -EINVAL;`。
 
 **注意**：返回值可能小于请求的大小（部分成功）。
 严格的实现要循环：
@@ -255,6 +265,48 @@ if (n == sizeof(newValue)) printf("写入成功\n");
 | 地址跨越页边界 | 正常（内核会处理） |
 | 目标进程正在退出 | 可能 ESRCH |
 | `iovcnt` 太大 | EINVAL（上限 `IOV_MAX`，通常 1024） |
+
+## 极端输入与边界工况推演
+
+> [!tip] 跨进程读取面对的是「不可信的外部数据」，必须假设一切都会出错
+> 下表列出四类极端工况及本项目 `SysHal`/`MemDriver` 的防御逻辑：
+
+| 极端工况 | 表现 | 防御逻辑（本项目真实做法） |
+|---|---|---|
+| **空载**（size=0 / 空指针） | 无意义调用 | 入口 `if (buffer == nullptr \|\| size == 0) return -EINVAL;` |
+| **超长负载**（size 超 IOV_MAX 上限） | 内核返回 EINVAL | 分块：每次最多一页（`sizeof(user_buffer)`），循环补齐 |
+| **非法目标**（pid<=0 / 进程已退出） | 返回 ESRCH / -1 | 调用前 `if (pid <= 0) return false;`；ESRCH 时重新找 PID |
+| **地址越界**（偏移失效 / 指针链断） | 返回 EFAULT 或部分成功 | 先用第 89 章多级过滤（范围/对齐/映射）拦掉野指针 |
+
+### 分块防御的完整形态（对应本项目 HandleVirtualMemoryRWEvent）
+
+```c
+// 一次最多传一页（0x1000），超大请求必须分块
+int pmem_read_chunked(pid_t pid, uint64_t addr, void *buf, size_t size) {
+    if (buf == nullptr || size == 0) return -EINVAL;   // 防御：空载
+    if (pid <= 0) return -ESRCH;                        // 防御：非法目标
+
+    size_t done = 0;
+    while (done < size) {
+        size_t chunk = size - done;
+        if (chunk > 0x1000) chunk = 0x1000;             // 防御：超长负载分块
+        ssize_t n = process_vm_readv(pid,
+            &(struct iovec){ (char*)buf + done, chunk },
+            1,
+            &(struct iovec){ (void*)(addr + done), chunk },
+            1, 0);
+        if (n <= 0) return done > 0 ? (int)done : -EIO; // 部分成功返回已读量
+        done += n;
+    }
+    return (int)done;
+}
+```
+
+> [!note] 与本项目源码的一致性
+> 这段的逻辑与 `driver.h` 的 `HandleVirtualMemoryRWEvent` 完全对应：
+> 入口判空（`if (!buffer \|\| size == 0) return -EINVAL;`）→ 按页分块（`sizeof(req->vmemrw_info.user_buffer)`）
+> → 部分成功累加（`successfulBytes`）→ 出错返回错误码。
+> **每个 `if` 都是从真实项目里摘出来的，不是凭空加的。**
 
 ## 完整的读写器
 

@@ -343,6 +343,39 @@ adb shell /data/local/tmp/embree_demo
 | 忘记 `rtcCommitScene` | 查询结果为空 | 改数据后必须 commit |
 | stride 写错 | 顶点位置错乱 | 用 `sizeof(顶点结构体)` |
 
+## 极端输入与边界工况推演
+
+> [!tip] 传给 Embree 的几何数据来自外部（碰撞体重建），必须假设会退化
+> 下表列出四类退化输入及防御逻辑：
+
+| 极端工况 | 表现 | 防御逻辑 |
+|---|---|---|
+| **空场景**（0 个三角形） | `rtcCommitScene` 后查询永不命中 | 建场景前判 `triangleCount==0` 则跳过（本项目 `GetMeshDatas` 为空时不建） |
+| **退化三角形**（三点共线/重合） | 面积为 0，法线 NaN | 建索引前过滤：`Cross(v1-v0, v2-v0)` 长度 < EPS 则丢弃 |
+| **顶点数超 uint32** | 索引溢出 | 用 `uint32_t`（上限 42 亿，实际不可能超）；本项目按顶点数选 16/32 位索引（第 94 章） |
+| **射线退化**（方向为零向量） | 结果无意义 | 发射线前判 `dir` 非零：`if (LengthSq(dir) < EPS) return;` |
+
+### 退化三角形的过滤（对应本项目从碰撞体重建网格）
+
+```cpp
+// 从碰撞体重建三角形时，过滤掉退化三角形（三点共线）
+bool IsDegenerate(const Vec3& a, const Vec3& b, const Vec3& c) {
+    Vec3 n = Cross(b - a, c - a);          // 面法线
+    return n.LengthSq() < 1e-6f;           // 法线长度为 0 = 退化
+}
+
+// 建索引时跳过退化三角形
+for (size_t i = 0; i + 2 < verts.size(); i += 3) {
+    if (IsDegenerate(verts[i], verts[i+1], verts[i+2])) continue;  // 防御
+    idx.push_back(i); idx.push_back(i+1); idx.push_back(i+2);
+}
+```
+
+> [!note] 与本项目源码一致性
+> 本项目 `Draw_ESP.cpp` 的 `drawMesh` 里遍历索引时，
+> 对每个三角形先 `WorldToScreen` 再判屏幕范围——**无效/屏幕外的三角形直接跳过**，
+> 这就是同一防御思想的绘制侧体现（第 94 章「三角形网格」也提到）。
+
 ## 动手：性能测量
 
 > [!important] 前置条件
